@@ -48,7 +48,7 @@ class Header
      * Header wrap
      * @var int
      */
-    protected $wrap = null;
+    protected $wrap = 76;
 
     /**
      * Header wrap indent
@@ -65,7 +65,7 @@ class Header
      * @param string $value
      * @param array  $parameters
      */
-    public function __construct($name = null, $value = null, array $parameters = null)
+    public function __construct($name = null, $value = null, array $parameters = [])
     {
         if (null !== $name) {
             $this->setName($name);
@@ -73,9 +73,41 @@ class Header
         if (null !== $value) {
             $this->setValue($value);
         }
-        if (null !== $parameters) {
-            $this->setParameters($parameters);
+        if (!empty($parameters)) {
+            $this->addParameters($parameters);
         }
+    }
+
+    /**
+     * Parse header
+     *
+     * @param  string $header
+     * @return Header
+     */
+    public static function parse($header)
+    {
+        $name       = trim(substr($header, 0, strpos($header, ':')));
+        $parameters = [];
+
+        if (strpos($header, ';') !== false) {
+            $value  = substr($header, (strpos($header, ':') + 1));
+            $value  = trim(substr($value, 0, strpos($value, ';')));
+            $params = array_map('trim', explode(';', trim(substr($header,  (strpos($header, ';') + 1)))));
+            foreach ($params as $param) {
+                if (strpos($param, '=') !== false) {
+                    [$paramName, $paramValue] = explode('=', $param);
+                    if ((substr($paramValue, 0, 1) == '"') && (substr($paramValue, -1) == '"')) {
+                        $paramValue = substr($paramValue, 1);
+                        $paramValue = substr($paramValue, 0, -1);
+                    }
+                    $parameters[$paramName] = $paramValue;
+                }
+            }
+        } else {
+            $value = trim(substr($header, (strpos($header, ':') + 1)));
+        }
+
+        return new self($name, $value, $parameters);
     }
 
     /**

@@ -58,6 +58,12 @@ class Body
     protected $isFile = false;
 
     /**
+     * Is encoded flag
+     * @var boolean
+     */
+    protected $isEncoded = false;
+
+    /**
      * Constructor
      *
      * Instantiate the body object
@@ -97,6 +103,7 @@ class Body
      * @param  string $file
      * @param  string $encoding
      * @param  string $split
+     * @throws Exception
      * @return Body
      */
     public function setContentFromFile($file, $encoding = null, $split = null)
@@ -104,14 +111,17 @@ class Body
         if (!file_exists($file)) {
             throw new Exception("Error: The file '" . $file . "' does not exist.");
         }
+
         $this->content = file_get_contents($file);
         $this->setAsFile(true);
+
         if (null !== $encoding) {
             $this->setEncoding($encoding);
         }
         if (null !== $split) {
             $this->setSplit($split);
         }
+
         return $this;
     }
 
@@ -246,21 +256,45 @@ class Body
     }
 
     /**
+     * Set as encoded
+     *
+     * @param  boolean $isEncoded
+     * @return Body
+     */
+    public function setAsEncoded($isEncoded)
+    {
+        $this->isEncoded = (bool)$isEncoded;
+        return $this;
+    }
+
+    /**
+     * Is encoded
+     *
+     * @return boolean
+     */
+    public function isEncoded()
+    {
+        return $this->isEncoded;
+    }
+
+    /**
      * Render the body
      *
      * @return string
      */
     public function render()
     {
-        switch ($this->encoding) {
-            case self::BASE64:
-                $content = base64_encode($this->content);
-                break;
-            case self::QUOTED:
-                $content = quoted_printable_encode($this->content);
-                break;
-            default:
-                $content = $this->content;
+        $content = $this->content;
+
+        if (!$this->isEncoded) {
+            switch ($this->encoding) {
+                case self::BASE64:
+                    $content = base64_encode($this->content);
+                    break;
+                case self::QUOTED:
+                    $content = quoted_printable_encode($this->content);
+                    break;
+            }
         }
 
         if (null !== $this->split) {
