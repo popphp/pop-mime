@@ -1,2 +1,3 @@
-# pop-mime
-Pop Mime Component
+pop-mime
+========
+
