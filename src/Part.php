@@ -428,7 +428,7 @@ class Part
     }
 
     /**
-     * Get decoded contents
+     * Get contents (decoded)
      *
      * @return mixed
      */
