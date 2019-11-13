@@ -290,9 +290,11 @@ class Body
             switch ($this->encoding) {
                 case self::BASE64:
                     $content = base64_encode($this->content);
+                    $this->isEncoded = true;
                     break;
                 case self::QUOTED:
                     $content = quoted_printable_encode($this->content);
+                    $this->isEncoded = true;
                     break;
             }
         }

@@ -476,6 +476,10 @@ class Part
                 $this->addHeader(
                     new Part\Header('Content-Transfer-Encoding', $encoding)
                 );
+            } else if ((!$this->hasHeader('Content-Transfer-Encoding')) && $this->body->isQuoted()) {
+                $this->addHeader(
+                    new Part\Header('Content-Transfer-Encoding', 'quoted-printable')
+                );
             }
             if ($this->hasHeaders()) {
                 $messagePart .= implode("\r\n", $this->headers) . "\r\n\r\n";

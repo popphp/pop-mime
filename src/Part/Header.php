@@ -276,6 +276,16 @@ class Header
     }
 
     /**
+     * Has header wrap indent
+     *
+     * @return boolean
+     */
+    public function hasIndent()
+    {
+        return (null !== $this->indent);
+    }
+
+    /**
      * Is the header for an attachment
      *
      * @return boolean
