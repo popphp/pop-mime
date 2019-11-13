@@ -58,7 +58,7 @@ Hello World!
 
 The header object allows you to create complex MIME headers with supporting parameters.
 You can also control things like the wrap of longer headers with multiple lines
-and indentation of those headers:
+and indentation of those header lines:
 
 ```php
 use Pop\Mime\Part\Header;
