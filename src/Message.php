@@ -151,7 +151,7 @@ class Message extends Part
         if (!empty($bodyString)) {
             $encoding = null;
             $isFile   = (($part->hasHeader('Content-Disposition')) &&
-                ($part->getHeader('Content-Disposition')->hasParameter('filename')));
+                ($part->getHeader('Content-Disposition')->isAttachment()));
             if ($part->hasHeader('Content-Transfer-Encoding')) {
                 $encodingHeader = strtolower($part->getHeader('Content-Transfer-Encoding')->getValue());
                 if ($encodingHeader == 'base64') {

@@ -276,6 +276,18 @@ class Header
     }
 
     /**
+     * Is the header for an attachment
+     *
+     * @return boolean
+     */
+    public function isAttachment()
+    {
+        return (($this->name == 'Content-Disposition') &&
+            (($this->value == 'attachment') || ($this->value == 'inline')) &&
+            (($this->hasParameter('filename')) || ($this->hasParameter('name'))));
+    }
+
+    /**
      * Render the header string
      *
      * @return string

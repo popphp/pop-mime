@@ -335,6 +335,119 @@ class Part
     }
 
     /**
+     * Has attachment (check via a header)
+     *
+     * @return boolean
+     */
+    public function hasAttachment()
+    {
+        $result = false;
+
+        foreach ($this->headers as $header) {
+            if ($header->isAttachment()) {
+                $result = true;
+                break;
+            }
+        }
+
+        if ((!$result) && ($this->hasParts())) {
+            $result = $this->hasAttachments();
+        }
+
+        return $result;
+    }
+
+    /**
+     * Does message have attachments (check via parts)
+     *
+     * @return boolean
+     */
+    public function hasAttachments()
+    {
+        foreach ($this->parts as $part) {
+            if ($part->hasAttachment()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get attachments
+     *
+     * @return array
+     */
+    public function getAttachments()
+    {
+        $attachments = [];
+
+        foreach ($this->parts as $part) {
+            if ($part->getBody()->isFile()) {
+                $attachments[] = $part;
+            }
+        }
+
+        return $attachments;
+    }
+
+    /**
+     * Get content-type
+     *
+     * @return string
+     */
+    public function getContentType()
+    {
+        $contentType = null;
+
+        if ($this->hasHeader('Content-Type')) {
+            $contentType = $this->getHeader('Content-Type')->getValue();
+        }
+
+        return $contentType;
+    }
+
+    /**
+     * Get attachment filename
+     *
+     * @return string
+     */
+    public function getFilename()
+    {
+        $filename = null;
+
+        if (($this->getBody()->isFile()) && ($this->hasHeader('Content-Disposition'))) {
+            $header = $this->getHeader('Content-Disposition');
+            if ($header->hasParameter('filename')) {
+                $filename = $header->getParameter('filename');
+            } else if ($header->hasParameter('name')) {
+                $filename = $header->getParameter('name');
+            }
+        }
+
+        return $filename;
+    }
+
+    /**
+     * Get decoded contents
+     *
+     * @return mixed
+     */
+    public function getContents()
+    {
+        $content = $this->body->getContent();
+
+        if ($this->body->isEncoded()) {
+            if ($this->body->isBase64()) {
+                $content = base64_decode($content);
+            } else if ($this->body->isQuoted()) {
+                $content = quoted_printable_decode($content);
+            }
+        }
+
+        return $content;
+    }
+
+    /**
      * Render the part
      *
      * @return string
