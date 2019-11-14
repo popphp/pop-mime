@@ -304,7 +304,7 @@ class Header
      */
     public function render()
     {
-        $header = $this->name . ': ' . $this->value;
+        $parameters = [];
 
         if (count($this->parameters) > 0) {
             $parameters = [];
@@ -314,12 +314,33 @@ class Header
                 }
                 $parameters[] = $name . '=' . $value;
             }
-
-            $header .= '; ' . implode('; ', $parameters);
         }
 
-        if (null !== $this->wrap) {
-            $header = wordwrap($header, $this->wrap, "\r\n" . $this->indent);
+        if (is_array($this->value)) {
+            $headers = [];
+            foreach ($this->value as $value) {
+                $hdr = $this->name . ': ' . $value;
+
+                if (count($parameters) > 0) {
+                    $hdr .= '; ' . implode('; ', $parameters);
+                }
+
+                if (null !== $this->wrap) {
+                    $hdr = wordwrap($hdr, $this->wrap, "\r\n" . $this->indent);
+                }
+                $headers[] = $hdr;
+            }
+            $header = implode("\r\n", $headers);
+        } else {
+            $header = $this->name . ': ' . $this->value;
+
+            if (count($parameters) > 0) {
+                $header .= '; ' . implode('; ', $parameters);
+            }
+
+            if (null !== $this->wrap) {
+                $header = wordwrap($header, $this->wrap, "\r\n" . $this->indent);
+            }
         }
 
         return $header;
