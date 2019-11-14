@@ -207,6 +207,13 @@ MDdFMzNFRDgKPj4Kc3RhcnR4cmVmCjc2NDQKJSVFT0YK
 
 ### Parsing MIME Messages
 
+#### *Note:*
+
+*This component adheres to the MIME standard which uses CRLF ("\r\n") for line breaks.
+If a mime message does not adhere to this standard, parsing may not work as intended.*
+
+**Parsing a message:**
+
 To parse MIME messages and content, you can take the string of MIME message content
 and pass it in the following method and it will return a message object with
 all of the related headers and parts.
@@ -217,6 +224,8 @@ use Pop\Mime\Message;
 $message = Message::parseMessage($messageString);
 ```
 
+**Parsing a header string:**
+
 If you happen to have the MIME header string, you can parse just that like below.
 This will return an array of header objects:
 
@@ -225,6 +234,8 @@ use Pop\Mime\Message;
 
 $headers = Message::parseMessage($headerString);
 ```
+
+**Parsing a body string:**
 
 If you happen to have the MIME body string, you can parse just that like below.
 This will return an array of part objects:
@@ -235,6 +246,8 @@ use Pop\Mime\Message;
 $parts = Message::parseBody($bodyString);
 ```
 
+**Parsing a single part string:**
+
 And if you happen to have the string of a single MIME part, you can parse just
 that like below. This will return a part object:
 
@@ -243,3 +256,16 @@ use Pop\Mime\Message;
 
 $part = Message::parsePart($partString);
 ```
+
+**Parsing form data:**
+
+As a special case, if you have `multipart/form-data` MIME content, you can parse
+it like below. This will return a form data array:
+
+```php
+use Pop\Mime\Message;
+
+$formData = Message::parseFrom($formString);
+```
+
+
