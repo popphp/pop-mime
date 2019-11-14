@@ -1,0 +1,45 @@
+Content-Type: multipart/form-data; boundary=---------------------------1095567293782112460996070782
+
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="username"
+
+admin
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="password"
+
+234234
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="first_name"
+
+Nick
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="last_name"
+
+Sagona
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="email"
+
+test@test.com
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="colors[]"
+
+Red
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="colors[]"
+
+Green
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="file1"; filename="test1.txt"
+Content-Type: text/plain
+
+Hello World!
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="file2"; filename="test2.txt"
+Content-Type: text/plain
+
+What is up!?
+-----------------------------1095567293782112460996070782
+Content-Disposition: form-data; name="submit"
+
+Submit
+-----------------------------1095567293782112460996070782--

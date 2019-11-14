@@ -60,6 +60,20 @@ class MessageTest extends TestCase
         $this->assertEquals(6, count($parsedMessage->getHeaders()));
     }
 
+    public function testParseForm()
+    {
+        $formData = Message::parseForm(file_get_contents(__DIR__ . '/tmp/form-file.txt'));
+        $this->assertEquals('admin', $formData['username']);
+        $this->assertEquals('234234', $formData['password']);
+        $this->assertEquals('Nick', $formData['first_name']);
+        $this->assertEquals('Sagona', $formData['last_name']);
+        $this->assertEquals('test@test.com', $formData['email']);
+        $this->assertTrue(is_array($formData['colors']));
+        $this->assertEquals(2, count($formData['colors']));
+        $this->assertEquals('Red', $formData['colors'][0]);
+        $this->assertEquals('Green', $formData['colors'][1]);
+    }
+
     public function testParseMessageWithFile()
     {
         $message = new Message();

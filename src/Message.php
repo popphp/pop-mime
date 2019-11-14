@@ -83,7 +83,26 @@ class Message extends Part
             if ($part->hasHeader('Content-Disposition')) {
                 $disposition = $part->getHeader('Content-Disposition');
                 if (($disposition->getValue() == 'form-data') && ($disposition->hasParameter('name'))) {
-                    $formData[$disposition->getParameter('name')] = $part->getContents();
+                    $name     = $disposition->getParameter('name');
+                    $contents = $part->getContents();
+                    $filename = ($disposition->hasParameter('filename')) ? $disposition->getParameter('filename') : null;
+
+                    if (substr($name, -2) == '[]') {
+                        $name = substr($name, 0, -2);
+                        if (!isset($formData[$name])) {
+                            $formData[$name] = [];
+                        }
+                        $formData[$name][] = $contents;
+                    } else {
+                        if (null !== $filename) {
+                            $formData[$name] = [
+                                'filename' => $filename,
+                                'contents' => $contents
+                            ];
+                        } else {
+                            $formData[$name] = $contents;
+                        }
+                    }
                 }
             }
         }
