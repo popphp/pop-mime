@@ -30,8 +30,10 @@ class Body
      * Encoding constants
      * @var string
      */
-    const BASE64 = 'BASE64';
-    const QUOTED = 'QUOTED';
+    const BASE64  = 'BASE64';
+    const QUOTED  = 'QUOTED';
+    const URL     = 'URL';
+    const RAW_URL = 'RAW_URL';
 
     /**
      * Content
@@ -156,6 +158,8 @@ class Body
         switch ($encoding) {
             case self::BASE64:
             case self::QUOTED:
+            case self::URL:
+            case self::RAW_URL:
             $this->encoding = $encoding;
         }
         return $this;
@@ -186,19 +190,39 @@ class Body
      *
      * @return boolean
      */
-    public function isBase64()
+    public function isBase64Encoding()
     {
         return ($this->encoding == self::BASE64);
     }
 
     /**
-     * Is encoding base64
+     * Is encoding quoted-printable
      *
      * @return boolean
      */
-    public function isQuoted()
+    public function isQuotedEncoding()
     {
         return ($this->encoding == self::QUOTED);
+    }
+
+    /**
+     * Is encoding URL
+     *
+     * @return boolean
+     */
+    public function isUrlEncoding()
+    {
+        return ($this->encoding == self::URL);
+    }
+
+    /**
+     * Is encoding raw URL
+     *
+     * @return boolean
+     */
+    public function isRawUrlEncoding()
+    {
+        return ($this->encoding == self::RAW_URL);
     }
 
     /**
@@ -294,6 +318,14 @@ class Body
                     break;
                 case self::QUOTED:
                     $content = quoted_printable_encode($this->content);
+                    $this->isEncoded = true;
+                    break;
+                case self::URL:
+                    $content = urlencode($this->content);
+                    $this->isEncoded = true;
+                    break;
+                case self::RAW_URL:
+                    $content = rawurlencode($this->content);
                     $this->isEncoded = true;
                     break;
             }

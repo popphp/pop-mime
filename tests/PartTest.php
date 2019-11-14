@@ -42,6 +42,15 @@ class PartTest extends TestCase
         $this->assertEquals('Hello World!', trim($subPart->getContents()));
     }
 
+    public function testGetContentsWithUrlEncoding()
+    {
+        $part = new Part();
+        $body = new Body('admin@something%testwhat/ever', Body::URL);
+        $part->setBody($body);
+        $this->assertContains('admin%40something%25testwhat%2Fever', $part->render());
+        $this->assertEquals('admin@something%testwhat/ever', $part->getContents());
+    }
+
 
     public function testGetFilenameFromName()
     {

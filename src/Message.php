@@ -194,6 +194,8 @@ class Message extends Part
             $encoding = null;
             $isFile   = (($part->hasHeader('Content-Disposition')) &&
                 ($part->getHeader('Content-Disposition')->isAttachment()));
+            $isForm   = (($part->hasHeader('Content-Disposition')) &&
+                ($part->getHeader('Content-Disposition')->getValue() == 'form-data'));
             if ($part->hasHeader('Content-Transfer-Encoding')) {
                 $encodingHeader = strtolower($part->getHeader('Content-Transfer-Encoding')->getValue());
                 if ($encodingHeader == 'base64') {
@@ -201,6 +203,8 @@ class Message extends Part
                 } else if ($encodingHeader == 'quoted-printable') {
                     $encoding = Body::QUOTED;
                 }
+            } else if ($isForm) {
+                $encoding = Body::RAW_URL;
             }
             $body = new Body($bodyString, $encoding);
             if (null !== $encoding) {

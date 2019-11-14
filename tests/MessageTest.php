@@ -63,7 +63,7 @@ class MessageTest extends TestCase
     public function testParseForm()
     {
         $formData = Message::parseForm(file_get_contents(__DIR__ . '/tmp/form-file.txt'));
-        $this->assertEquals('admin', $formData['username']);
+        $this->assertEquals('admin@something%test+what/ever', $formData['username']);
         $this->assertEquals('234234', $formData['password']);
         $this->assertEquals('Nick', $formData['first_name']);
         $this->assertEquals('Sagona', $formData['last_name']);

@@ -3,7 +3,7 @@ Content-Type: multipart/form-data; boundary=---------------------------109556729
 -----------------------------1095567293782112460996070782
 Content-Disposition: form-data; name="username"
 
-admin
+admin%40something%25test%2Bwhat%2Fever
 -----------------------------1095567293782112460996070782
 Content-Disposition: form-data; name="password"
 

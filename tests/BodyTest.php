@@ -32,4 +32,10 @@ class BodyTest extends TestCase
         $this->assertEquals('Hello World!', (string)$body);
     }
 
+    public function testRawUrlEncode()
+    {
+        $body = new Body('admin@something%test+what/ever', Body::RAW_URL);
+        $this->assertEquals('admin%40something%25test%2Bwhat%2Fever', (string)$body);
+    }
+
 }

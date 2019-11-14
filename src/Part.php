@@ -437,10 +437,14 @@ class Part
         $content = $this->body->getContent();
 
         if ($this->body->isEncoded()) {
-            if ($this->body->isBase64()) {
+            if ($this->body->isBase64Encoding()) {
                 $content = base64_decode($content);
-            } else if ($this->body->isQuoted()) {
+            } else if ($this->body->isQuotedEncoding()) {
                 $content = quoted_printable_decode($content);
+            } else if ($this->body->isUrlEncoding()) {
+                $content = urldecode($content);
+            } else if ($this->body->isRawUrlEncoding()) {
+                $content = rawurldecode($content);
             }
         }
 
@@ -472,11 +476,11 @@ class Part
             $messagePart .= "--" . $boundary . "--\r\n";
         } else if ($this->hasBody()) {
             if (($this->body->isFile()) && (!$this->hasHeader('Content-Transfer-Encoding'))) {
-                $encoding = ($this->body->isBase64()) ? 'base64' : 'binary';
+                $encoding = ($this->body->isBase64Encoding()) ? 'base64' : 'binary';
                 $this->addHeader(
                     new Part\Header('Content-Transfer-Encoding', $encoding)
                 );
-            } else if ((!$this->hasHeader('Content-Transfer-Encoding')) && $this->body->isQuoted()) {
+            } else if ((!$this->hasHeader('Content-Transfer-Encoding')) && $this->body->isQuotedEncoding()) {
                 $this->addHeader(
                     new Part\Header('Content-Transfer-Encoding', 'quoted-printable')
                 );
