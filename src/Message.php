@@ -111,6 +111,70 @@ class Message extends Part
     }
 
     /**
+     * Create multipart form object
+     *
+     * @param  array  $fields
+     * @param  array  $files
+     * @param  string $encoding
+     * @return Message
+     */
+    public static function createForm($fields = [], $files = [], $encoding = null)
+    {
+        $message = new self();
+        $header  = new Header('Content-Type', 'multipart/form-data', ['boundary' => $message->generateBoundary()]);
+        $message->addHeader($header);
+
+        if (!empty($fields)) {
+            foreach ($fields as $name => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $val) {
+                        $fieldPart = new Part(new Header('Content-Disposition', 'form-data', ['name' => $name . '[]']));
+                        $fieldPart->setBody(new Body($val, Body::RAW_URL));
+                        $message->addPart($fieldPart);
+                    }
+                } else {
+                    $fieldPart = new Part(new Header('Content-Disposition', 'form-data', ['name' => $name]));
+                    $fieldPart->setBody(new Body($value, Body::RAW_URL));
+                    $message->addPart($fieldPart);
+                }
+            }
+        }
+
+        if (!empty($files)) {
+            foreach ($files as $name => $value) {
+                $parameters   = ['name' => $name];
+                $contentType  = null;
+                $fileContents = null;
+
+                foreach ($value as $key => $val) {
+                    $key = strtolower($key);
+                    if ($key == 'filename') {
+                        $parameters['filename'] = basename($val);
+                    }
+                    if (($key == 'contenttype') || ($key == 'content-type') || ($key == 'mime-type') || ($key == 'mime')) {
+                        $contentType = $val;
+                    }
+                }
+
+                if (isset($value['contents'])) {
+                    $fileContents = $value['contents'];
+                } else if (file_exists($value['filename'])) {
+                    $fileContents = file_get_contents($value['filename']);
+                }
+
+                $fieldPart = new Part(new Header('Content-Disposition', 'form-data', $parameters));
+                if (null !== $contentType) {
+                    $fieldPart->addHeader('Content-Type', $contentType);
+                }
+                $fieldPart->setBody(new Body($fileContents, $encoding));
+                $message->addPart($fieldPart);
+            }
+        }
+
+        return $message;
+    }
+
+    /**
      * Parse message header string
      *
      * @param  string $headerString
