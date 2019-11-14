@@ -69,6 +69,29 @@ class Message extends Part
     }
 
     /**
+     * Parse form data
+     *
+     * @param  string $formString
+     * @return array
+     */
+    public static function parseForm($formString)
+    {
+        $form     = self::parseMessage($formString);
+        $formData = [];
+
+        foreach ($form->getParts() as $part) {
+            if ($part->hasHeader('Content-Disposition')) {
+                $disposition = $part->getHeader('Content-Disposition');
+                if (($disposition->getValue() == 'form-data') && ($disposition->hasParameter('name'))) {
+                    $formData[$disposition->getParameter('name')] = $part->getContents();
+                }
+            }
+        }
+
+        return $formData;
+    }
+
+    /**
      * Parse message header string
      *
      * @param  string $headerString
