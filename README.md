@@ -268,4 +268,23 @@ use Pop\Mime\Message;
 $formData = Message::parseFrom($formString);
 ```
 
+It's important to note that in order for the above example to work properly, it
+has to have a header with at least the `Content-Type` defined, including the boundary
+that will be used in parsing the form data:
+
+```text
+Content-Type: multipart/form-data;
+	boundary=5bedb090b0b35ce8029464dbec97013c3615cc5a
+
+--5bedb090b0b35ce8029464dbec97013c3615cc5a
+Content-Disposition: form-data; name="username"
+
+admin
+--5bedb090b0b35ce8029464dbec97013c3615cc5a
+Content-Disposition: form-data; name="password"
+
+password
+--5bedb090b0b35ce8029464dbec97013c3615cc5a--
+```
+
 
