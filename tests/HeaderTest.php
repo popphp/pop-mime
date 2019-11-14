@@ -51,4 +51,20 @@ class HeaderTest extends TestCase
         $this->assertContains('Set-Cookie: 987654; foo=bar', $headerString);
     }
 
+    public function testParseMultipleValues()
+    {
+        $header = new Header('Set-Cookie', ['123456', '987654']);
+        $headerString = $header->render();
+        $parsedHeader = Header::parse($headerString);
+        $this->assertEquals(2, count($parsedHeader->getValue()));
+    }
+
+    public function testParseMultipleValuesWithParams()
+    {
+        $header = new Header('Set-Cookie', ['123456', '987654'], ['foo' => 'bar']);
+        $headerString = $header->render();
+        $parsedHeader = Header::parse($headerString);
+        $this->assertEquals(2, count($parsedHeader->getValue()));
+    }
+
 }

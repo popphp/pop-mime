@@ -34,7 +34,7 @@ class Header
 
     /**
      * Header value
-     * @var string
+     * @var string|array
      */
     protected $value = null;
 
@@ -87,27 +87,58 @@ class Header
     public static function parse($header)
     {
         $name       = trim(substr($header, 0, strpos($header, ':')));
+        $value      = null;
         $parameters = [];
 
-        if (strpos($header, ';') !== false) {
-            $value  = substr($header, (strpos($header, ':') + 1));
-            $value  = trim(substr($value, 0, strpos($value, ';')));
-            $params = array_map('trim', explode(';', trim(substr($header,  (strpos($header, ';') + 1)))));
-            foreach ($params as $param) {
-                if (strpos($param, '=') !== false) {
-                    [$paramName, $paramValue] = explode('=', $param);
-                    if ((substr($paramValue, 0, 1) == '"') && (substr($paramValue, -1) == '"')) {
-                        $paramValue = substr($paramValue, 1);
-                        $paramValue = substr($paramValue, 0, -1);
+        // Handle multiple values
+        if (substr_count($header, $name) > 1) {
+            $values = array_map('trim', array_filter(explode($name . ':', $header)));
+            foreach ($values as $i => $value) {
+                if (strpos($value, ';') !== false) {
+                    $params     = array_map('trim', explode(';', trim(substr($value,  (strpos($value, ';') + 1)))));
+                    $values[$i] = trim(substr($value, 0, strpos($value, ';')));
+                    foreach ($params as $param) {
+                        if (strpos($param, '=') !== false) {
+                            [$paramName, $paramValue] = self::parseParameter($param);
+                            $parameters[$paramName] = $paramValue;
+                        }
                     }
-                    $parameters[$paramName] = $paramValue;
                 }
             }
+            return new self($name, $values, $parameters);
         } else {
-            $value = trim(substr($header, (strpos($header, ':') + 1)));
-        }
+            if (strpos($header, ';') !== false) {
+                $value  = substr($header, (strpos($header, ':') + 1));
+                $value  = trim(substr($value, 0, strpos($value, ';')));
+                $params = array_map('trim', explode(';', trim(substr($header,  (strpos($header, ';') + 1)))));
+                foreach ($params as $param) {
+                    if (strpos($param, '=') !== false) {
+                        [$paramName, $paramValue] = self::parseParameter($param);
+                        $parameters[$paramName] = $paramValue;
+                    }
+                }
+            } else {
+                $value = trim(substr($header, (strpos($header, ':') + 1)));
+            }
 
-        return new self($name, $value, $parameters);
+            return new self($name, $value, $parameters);
+        }
+    }
+
+    /**
+     * Render the header string
+     *
+     * @param  string $parameter
+     * @return array
+     */
+    public static function parseParameter($parameter)
+    {
+        [$paramName, $paramValue] = explode('=', $parameter);
+        if ((substr($paramValue, 0, 1) == '"') && (substr($paramValue, -1) == '"')) {
+            $paramValue = substr($paramValue, 1);
+            $paramValue = substr($paramValue, 0, -1);
+        }
+        return [$paramName, $paramValue];
     }
 
     /**
@@ -147,7 +178,7 @@ class Header
     /**
      * Get the header value
      *
-     * @return string
+     * @return string|array
      */
     public function getValue()
     {
