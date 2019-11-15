@@ -161,6 +161,20 @@ class Part
     }
 
     /**
+     * Remove header
+     *
+     * @param  string $name
+     * @return Part
+     */
+    public function removeHeader($name)
+    {
+        if (isset($this->headers[$name])) {
+            unset($this->headers[$name]);
+        }
+        return $this;
+    }
+
+    /**
      * Set body
      *
      * @param  Part\Body|string $body
@@ -454,9 +468,10 @@ class Part
     /**
      * Render the part
      *
+     * @param  boolean $preamble
      * @return string
      */
-    public function render()
+    public function render($preamble = true)
     {
         $messagePart = '';
 
@@ -467,9 +482,12 @@ class Part
                     new Part\Header('Content-Type', 'multipart/' . $this->subType . '; boundary=' . $boundary)
                 );
             }
-            $messagePart .= implode("\r\n", $this->headers) . "\r\n\r\n";
-            $messagePart .= "This is a multi-part message in MIME format.\r\n";
-
+            if ($this->hasHeaders()) {
+                $messagePart .= implode("\r\n", $this->headers) . "\r\n\r\n";
+            }
+            if ($preamble) {
+                $messagePart .= "This is a multi-part message in MIME format.\r\n";
+            }
             foreach ($this->parts as $part) {
                 $messagePart .= "--" . $boundary . "\r\n" . $part . "\r\n";
             }
