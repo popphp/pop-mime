@@ -161,7 +161,7 @@ $text->addHeader('Content-Type', 'text/plain');
 $text->setBody('This is the text message.');
 
 $file = new Part();
-$file->addHeader('Content-Type', 'application/octet-stream');
+$file->addHeader('Content-Type', 'application/pdf');
 $file->addFile('test.pdf');
 
 $message->addParts([$html, $text, $file]);
@@ -189,7 +189,7 @@ Content-Type: text/plain
 
 This is the text message.
 --5bedb090b0b35ce8029464dbec97013c3615cc5a
-Content-Type: application/octet-stream
+Content-Type: application/pdf
 Content-Disposition: attachment; filename=test.pdf
 Content-Transfer-Encoding: base64
 
@@ -287,4 +287,126 @@ password
 --5bedb090b0b35ce8029464dbec97013c3615cc5a--
 ```
 
+### Create a Multipart Form Message
 
+You can create a `multipart/form-data` MIME message for HTTP using the `createForm`
+method, like below:
+
+```php
+use Pop\Mime\Message;
+
+$formData = [
+    'username' => 'admin@test/whatever%DUDE!',
+    'password' => '123456',
+    'colors'   => ['Red', 'Green']
+];
+
+$formMessage = Message::createForm($formData);
+echo $formMessage();
+```
+
+The above code will create a full `multipart/form-data` MIME message that looks like this:
+
+```text
+Content-Type: multipart/form-data; boundary=43acac9dbd159dd8bccd29289bd66244d5f6b260
+
+This is a multi-part message in MIME format.
+--43acac9dbd159dd8bccd29289bd66244d5f6b260
+Content-Disposition: form-data; name=username
+
+admin%40test%2Fwhatever%25DUDE%21
+--43acac9dbd159dd8bccd29289bd66244d5f6b260
+Content-Disposition: form-data; name=password
+
+123456
+--43acac9dbd159dd8bccd29289bd66244d5f6b260
+Content-Disposition: form-data; name=colors[]
+
+Red
+--43acac9dbd159dd8bccd29289bd66244d5f6b260
+Content-Disposition: form-data; name=colors[]
+
+Green
+--43acac9dbd159dd8bccd29289bd66244d5f6b260--
+```
+
+If you wish to alter the message to prep it to send via an HTTP resource like cURL or
+a stream, you can do this:
+
+```php
+use Pop\Mime\Message;
+
+$formData = [
+    'username' => 'admin@test/whatever%DUDE!',
+    'password' => '123456',
+    'colors'   => ['Red', 'Green']
+];
+
+$formMessage = Message::createForm($formData);
+$header      = $formMessage->getHeader('Content-Type');
+$formMessage->removeHeader('Content-Type');
+
+echo $formMessage->render(false);
+```
+
+And that will render just the form data content, removing the top-level header
+and the preamble:
+
+```text
+--28fd350696733cf5d2c466383a7e0193a5cfffc3
+Content-Disposition: form-data; name=username
+
+admin%40test%2Fwhatever%25DUDE%21
+--28fd350696733cf5d2c466383a7e0193a5cfffc3
+Content-Disposition: form-data; name=password
+
+123456
+--28fd350696733cf5d2c466383a7e0193a5cfffc3
+Content-Disposition: form-data; name=colors[]
+
+Red
+--28fd350696733cf5d2c466383a7e0193a5cfffc3
+Content-Disposition: form-data; name=colors[]
+
+Green
+--28fd350696733cf5d2c466383a7e0193a5cfffc3--
+```
+
+**Create form data with a file:**
+
+You can also create form data with files in a couple of different ways as well:
+
+*Example 1:*
+
+```php
+$formData = [
+    'file'     => [
+        'filename'    => __DIR__ . '/test.pdf',
+        'contentType' => 'application/pdf'
+    ]
+];
+```
+
+*Example 2:*
+
+```php
+$formData = [
+    'file'     => [
+        'filename' => 'test.pdf',
+        'contents' => file_get_contents(__DIR__ . '/test.pdf')
+        'mimeType' => 'application/pdf'
+    ]
+];
+```
+
+In example 1, the file on disk is pass and put into the form data from there.
+In example 2, the file contents are passed to the `contents` key to explicitly
+set the file data into the form data. Also, for flexibility, the following
+case-insensitive keys are acceptable for `Content-Type`:
+
+- Content-Type
+- contentType
+- Mime-Type
+- mimeType
+- mime
+ 
