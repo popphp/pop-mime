@@ -265,7 +265,7 @@ it like below. This will return a form data array:
 ```php
 use Pop\Mime\Message;
 
-$formData = Message::parseFrom($formString);
+$formData = Message::parseForm($formString);
 ```
 
 It's important to note that in order for the above example to work properly, it
@@ -399,8 +399,8 @@ $formData = [
 ];
 ```
 
-In example 1, the file on disk is pass and put into the form data from there.
-In example 2, the file contents are passed to the `contents` key to explicitly
+In example 1, the file on disk is passed and put into the form data from there.
+In example 2, the file contents are explicitly passed to the `contents` key to 
 set the file data into the form data. Also, for flexibility, the following
 case-insensitive keys are acceptable for `Content-Type`:
 
