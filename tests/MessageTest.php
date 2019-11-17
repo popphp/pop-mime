@@ -65,13 +65,70 @@ class MessageTest extends TestCase
         $formData = Message::parseForm(file_get_contents(__DIR__ . '/tmp/form-file.txt'));
         $this->assertEquals('admin@something%test+what/ever', $formData['username']);
         $this->assertEquals('234234', $formData['password']);
-        $this->assertEquals('Nick', $formData['first_name']);
-        $this->assertEquals('Sagona', $formData['last_name']);
+        $this->assertEquals('John', $formData['first_name']);
+        $this->assertEquals('Doe', $formData['last_name']);
         $this->assertEquals('test@test.com', $formData['email']);
         $this->assertTrue(is_array($formData['colors']));
         $this->assertEquals(2, count($formData['colors']));
         $this->assertEquals('Red', $formData['colors'][0]);
         $this->assertEquals('Green', $formData['colors'][1]);
+    }
+
+    public function testCreateForm()
+    {
+        $formData = [
+            'username' => 'admin@test/whatever%DUDE!',
+            'password' => '123456',
+            'colors'   => ['Red', 'Green'],
+            'file'     => [
+                'filename'    => __DIR__ . '/tmp/test.pdf',
+                'contentType' => 'application/pdf'
+            ]
+        ];
+
+        $formMessage = Message::createForm($formData);
+        $contents    = $formMessage->render(false);
+
+        $this->assertContains('Content-Type: multipart/form-data; boundary=', $contents);
+        $this->assertContains('Content-Disposition: form-data; name=username', $contents);
+        $this->assertContains('Content-Disposition: form-data; name=password', $contents);
+        $this->assertContains('Content-Disposition: form-data; name=colors[]', $contents);
+        $this->assertContains('Content-Disposition: form-data; name=file; filename=test.pdf', $contents);
+        $this->assertContains('Content-Type: application/pdf', $contents);
+        $this->assertContains('admin%40test%2Fwhatever%25DUDE%21', $contents);
+        $this->assertContains('123456', $contents);
+        $this->assertContains('Red', $contents);
+        $this->assertContains('Green', $contents);
+        $this->assertContains('%PDF-1.4', $contents);
+    }
+
+    public function testCreateFormWithFileContents()
+    {
+        $formData = [
+            'username' => 'admin@test/whatever%DUDE!',
+            'password' => '123456',
+            'colors'   => ['Red', 'Green'],
+            'file'     => [
+                'filename'    => 'test.pdf',
+                'contents'    => file_get_contents(__DIR__ . '/tmp/test.pdf'),
+                'contentType' => 'application/pdf'
+            ]
+        ];
+
+        $formMessage = Message::createForm($formData);
+        $contents    = $formMessage->render(false);
+
+        $this->assertContains('Content-Type: multipart/form-data; boundary=', $contents);
+        $this->assertContains('Content-Disposition: form-data; name=username', $contents);
+        $this->assertContains('Content-Disposition: form-data; name=password', $contents);
+        $this->assertContains('Content-Disposition: form-data; name=colors[]', $contents);
+        $this->assertContains('Content-Disposition: form-data; name=file; filename=test.pdf', $contents);
+        $this->assertContains('Content-Type: application/pdf', $contents);
+        $this->assertContains('admin%40test%2Fwhatever%25DUDE%21', $contents);
+        $this->assertContains('123456', $contents);
+        $this->assertContains('Red', $contents);
+        $this->assertContains('Green', $contents);
+        $this->assertContains('%PDF-1.4', $contents);
     }
 
     public function testParseMessageWithFile()

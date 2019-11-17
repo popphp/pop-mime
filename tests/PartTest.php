@@ -51,7 +51,6 @@ class PartTest extends TestCase
         $this->assertEquals('admin@something%testwhat/ever', $part->getContents());
     }
 
-
     public function testGetFilenameFromName()
     {
         $header = Header::parse('Content-Disposition: attachment; name=file.txt');
@@ -59,5 +58,15 @@ class PartTest extends TestCase
         $part->setBody(new Body(file_get_contents(__DIR__ . '/tmp/test.txt')));
         $part->getBody()->setAsFile(true);
         $this->assertEquals('file.txt', $part->getFilename());
+    }
+
+    public function testRemoveHeader()
+    {
+        $header = Header::parse('Content-Type: text/plain');
+        $part   = new Part($header);
+        $this->assertTrue($part->hasHeader('Content-Type'));
+        $part->removeHeader('Content-Type');
+        $this->assertFalse($part->hasHeader('Content-Type'));
+
     }
 }

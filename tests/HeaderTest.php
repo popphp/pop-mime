@@ -43,6 +43,15 @@ class HeaderTest extends TestCase
         $this->assertContains('Set-Cookie: 987654', $headerString);
     }
 
+    public function testMultipleValuesWithWrap()
+    {
+        $header = new Header('Set-Cookie', ['123456', '987654']);
+        $header->setWrap(100);
+        $headerString = $header->render();
+        $this->assertContains('Set-Cookie: 123456', $headerString);
+        $this->assertContains('Set-Cookie: 987654', $headerString);
+    }
+
     public function testMultipleValuesWithParams()
     {
         $header = new Header('Set-Cookie', ['123456', '987654'], ['foo' => 'bar']);

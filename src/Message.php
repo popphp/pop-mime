@@ -114,10 +114,9 @@ class Message extends Part
      * Create multipart form object
      *
      * @param  array  $fields
-     * @param  string $encoding
      * @return Message
      */
-    public static function createForm($fields = [], $encoding = null)
+    public static function createForm($fields = [])
     {
         $message = new self();
         $header  = new Header('Content-Type', 'multipart/form-data', ['boundary' => $message->generateBoundary()]);
@@ -153,17 +152,7 @@ class Message extends Part
                         if (null !== $contentType) {
                             $fieldPart->addHeader('Content-Type', $contentType);
                         }
-                        $body = new Body($fileContents);
-                        if (null !== $encoding) {
-                            $body->setEncoding($encoding)
-                                ->setSplit(76);
-                            if ($body->isBase64Encoding()) {
-                                $fieldPart->addHeader('Content-Transfer-Encoding', 'base64');
-                            } else if ($body->isQuotedEncoding()) {
-                                $fieldPart->addHeader('Content-Transfer-Encoding', 'quoted-printable');
-                            }
-                        }
-                        $fieldPart->setBody($body);
+                        $fieldPart->setBody(new Body($fileContents));
                         $message->addPart($fieldPart);
                     } else {
                         foreach ($value as $val) {

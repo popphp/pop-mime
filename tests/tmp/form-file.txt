@@ -11,11 +11,11 @@ Content-Disposition: form-data; name="password"
 -----------------------------1095567293782112460996070782
 Content-Disposition: form-data; name="first_name"
 
-Nick
+John
 -----------------------------1095567293782112460996070782
 Content-Disposition: form-data; name="last_name"
 
-Sagona
+Doe
 -----------------------------1095567293782112460996070782
 Content-Disposition: form-data; name="email"
 

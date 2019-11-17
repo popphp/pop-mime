@@ -48,7 +48,7 @@ class Header
      * Header wrap
      * @var int
      */
-    protected $wrap = 76;
+    protected $wrap = 0;
 
     /**
      * Header wrap indent
@@ -356,7 +356,7 @@ class Header
                     $hdr .= '; ' . implode('; ', $parameters);
                 }
 
-                if (null !== $this->wrap) {
+                if ((int)$this->wrap !== 0) {
                     $hdr = wordwrap($hdr, $this->wrap, "\r\n" . $this->indent);
                 }
                 $headers[] = $hdr;
@@ -369,7 +369,7 @@ class Header
                 $header .= '; ' . implode('; ', $parameters);
             }
 
-            if (null !== $this->wrap) {
+            if ((int)$this->wrap !== 0) {
                 $header = wordwrap($header, $this->wrap, "\r\n" . $this->indent);
             }
         }
