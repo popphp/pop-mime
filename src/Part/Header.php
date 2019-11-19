@@ -133,7 +133,8 @@ class Header
      */
     public static function parseParameter($parameter)
     {
-        [$paramName, $paramValue] = explode('=', $parameter);
+        $paramName  = substr($parameter, 0, strpos($parameter, '='));
+        $paramValue = substr($parameter, (strpos($parameter, '=')+ 1));
         if ((substr($paramValue, 0, 1) == '"') && (substr($paramValue, -1) == '"')) {
             $paramValue = substr($paramValue, 1);
             $paramValue = substr($paramValue, 0, -1);
