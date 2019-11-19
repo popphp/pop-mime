@@ -537,6 +537,57 @@ class Part
     }
 
     /**
+     * Render the part headers
+     *
+     * @return string
+     */
+    public function renderHeaders()
+    {
+        return implode("\r\n", $this->headers) . "\r\n\r\n";
+    }
+
+    /**
+     * Render the parts
+     *
+     * @param  boolean $preamble
+     * @return string
+     */
+    public function renderParts($preamble = true)
+    {
+        $parts = '';
+
+        $boundary = (!$this->hasBoundary()) ? $this->generateBoundary() : $this->boundary;
+        if (!($this->hasHeader('Content-Type')) && ($this->hasSubType())) {
+            $this->addHeader(
+                new Part\Header('Content-Type', 'multipart/' . $this->subType . '; boundary=' . $boundary)
+            );
+        }
+        if ($this->hasHeaders()) {
+            $parts .= $this->renderHeaders();
+        }
+        if ($preamble) {
+            $parts .= "This is a multi-part message in MIME format.\r\n";
+        }
+        foreach ($this->parts as $part) {
+            $parts .= "--" . $boundary . "\r\n" . $part . "\r\n";
+        }
+
+        $parts .= "--" . $boundary . "--\r\n";
+
+        return $parts;
+    }
+
+    /**
+     * Render the part body
+     *
+     * @return string
+     */
+    public function renderBody()
+    {
+        return $this->body->render();
+    }
+
+    /**
      * Render the part
      *
      * @param  boolean $preamble
@@ -547,22 +598,7 @@ class Part
         $messagePart = '';
 
         if ($this->hasParts()) {
-            $boundary = (!$this->hasBoundary()) ? $this->generateBoundary() : $this->boundary;
-            if (!($this->hasHeader('Content-Type')) && ($this->hasSubType())) {
-                $this->addHeader(
-                    new Part\Header('Content-Type', 'multipart/' . $this->subType . '; boundary=' . $boundary)
-                );
-            }
-            if ($this->hasHeaders()) {
-                $messagePart .= implode("\r\n", $this->headers) . "\r\n\r\n";
-            }
-            if ($preamble) {
-                $messagePart .= "This is a multi-part message in MIME format.\r\n";
-            }
-            foreach ($this->parts as $part) {
-                $messagePart .= "--" . $boundary . "\r\n" . $part . "\r\n";
-            }
-            $messagePart .= "--" . $boundary . "--\r\n";
+            $messagePart .= $this->renderParts($preamble);
         } else if ($this->hasBody()) {
             if (($this->body->isFile()) && (!$this->hasHeader('Content-Transfer-Encoding'))) {
                 $encoding = ($this->body->isBase64Encoding()) ? 'base64' : 'binary';
@@ -575,9 +611,9 @@ class Part
                 );
             }
             if ($this->hasHeaders()) {
-                $messagePart .= implode("\r\n", $this->headers) . "\r\n\r\n";
+                $messagePart .= $this->renderHeaders();
             }
-            $messagePart .= $this->body->render();
+            $messagePart .= $this->renderBody();
         }
 
         return $messagePart;
