@@ -129,6 +129,26 @@ class Part
     }
 
     /**
+     * Get headers as array
+     *
+     * @return array
+     */
+    public function getHeadersAsArray()
+    {
+        $headers = [];
+
+        foreach ($this->headers as $header) {
+            $headerValue = $header->getValue();
+            if ($header->hasParameters()) {
+                $headerValue .= '; ' . $header->getParametersAsString();
+            }
+            $headers[$header->getName()] = $headerValue;
+        }
+
+        return $headers;
+    }
+
+    /**
      * Get headers
      *
      * @param  string $name
@@ -248,7 +268,21 @@ class Part
     public function addParts(array $parts)
     {
         foreach ($parts as $part) {
-            $this->addPart($part);
+            if (is_array($part)) {
+                $file = false;
+                foreach ($part as $p) {
+                    if (($p->hasBody()) && ($p->getBody()->isFile())) {
+                        $file = true;
+                    }
+                }
+                $subType  = ($file) ? 'mixed' : 'alternative';
+                $subParts = new Part();
+                $subParts->setSubType($subType);
+                $subParts->addParts($part);
+                $this->addPart($subParts);
+            } else {
+                $this->addPart($part);
+            }
         }
         return $this;
     }
@@ -429,12 +463,49 @@ class Part
     {
         $filename = null;
 
-        if (($this->getBody()->isFile()) && ($this->hasHeader('Content-Disposition'))) {
-            $header = $this->getHeader('Content-Disposition');
-            if ($header->hasParameter('filename')) {
-                $filename = $header->getParameter('filename');
-            } else if ($header->hasParameter('name')) {
-                $filename = $header->getParameter('name');
+        if ($this->getBody()->isFile()) {
+            // Check Content-Disposition header (standard)
+            if ($this->hasHeader('Content-Disposition')) {
+                $header = $this->getHeader('Content-Disposition');
+                if ($header->hasParameter('filename')) {
+                    $filename = $header->getParameter('filename');
+                } else if ($header->hasParameter('name')) {
+                    $filename = $header->getParameter('name');
+                }
+            }
+
+            // Else, check Content-Type header (non-standard)
+            if (null === $filename) {
+                if ($this->hasHeader('Content-Type')) {
+                    $header = $this->getHeader('Content-Type');
+                    if ($header->hasParameter('filename')) {
+                        $filename = $header->getParameter('filename');
+                    } else if ($header->hasParameter('name')) {
+                        $filename = $header->getParameter('name');
+                    }
+                }
+            }
+
+            // Else, check Content-Description header (non-standard)
+            if (null === $filename) {
+                if ($this->hasHeader('Content-Description')) {
+                    $header = $this->getHeader('Content-Description');
+                    if ($header->hasParameter('filename')) {
+                        $filename = $header->getParameter('filename');
+                    } else if ($header->hasParameter('name')) {
+                        $filename = $header->getParameter('name');
+                    }
+                }
+            }
+        }
+
+        // Decode filename, if encoded
+        if ((null !== $filename) && (function_exists('imap_mime_header_decode')) &&
+            ((strpos($filename, 'UTF') !== false) || (strpos($filename, 'ISO') !== false) ||
+                (strpos($filename, '?') !== false) || (strpos($filename, '=') !== false))) {
+            $filenameAry = imap_mime_header_decode($filename);
+            if (isset($filenameAry[0]) && isset($filenameAry[0]->text)) {
+                $filename = $filenameAry[0]->text;
             }
         }
 

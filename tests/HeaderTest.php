@@ -76,4 +76,10 @@ class HeaderTest extends TestCase
         $this->assertEquals(2, count($parsedHeader->getValue()));
     }
 
+    public function testGetParametersAsString()
+    {
+        $header = new Header('Content-Disposition', 'attachment', ['filename' => 'some file.pdf']);
+        $this->assertEquals('filename="some file.pdf"', $header->getParametersAsString());
+    }
+
 }

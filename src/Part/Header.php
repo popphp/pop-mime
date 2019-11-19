@@ -222,6 +222,25 @@ class Header
     }
 
     /**
+     * Get the header parameters as string
+     *
+     * @return string
+     */
+    public function getParametersAsString()
+    {
+        $parameters = [];
+
+        foreach ($this->parameters as $name => $value) {
+            if (strpos($value, ' ') !== false) {
+                $value = '"' . $value . '"';
+            }
+            $parameters[] = $name . '=' . $value;
+        }
+
+        return implode('; ', $parameters);
+    }
+
+    /**
      * Get a header parameter
      *
      * @param  string $name

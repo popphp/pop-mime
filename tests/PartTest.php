@@ -60,6 +60,51 @@ class PartTest extends TestCase
         $this->assertEquals('file.txt', $part->getFilename());
     }
 
+    public function testGetFilenameFromContentType1()
+    {
+        $header = Header::parse('Content-Type: text/plain; name=file.txt');
+        $part   = new Part($header);
+        $part->setBody(new Body(file_get_contents(__DIR__ . '/tmp/test.txt')));
+        $part->getBody()->setAsFile(true);
+        $this->assertEquals('file.txt', $part->getFilename());
+    }
+
+    public function testGetFilenameFromContentType2()
+    {
+        $header = Header::parse('Content-Type: text/plain; filename=file.txt');
+        $part   = new Part($header);
+        $part->setBody(new Body(file_get_contents(__DIR__ . '/tmp/test.txt')));
+        $part->getBody()->setAsFile(true);
+        $this->assertEquals('file.txt', $part->getFilename());
+    }
+
+    public function testGetFilenameFromContentDescription1()
+    {
+        $header = Header::parse('Content-Description: text/plain; name=file.txt');
+        $part   = new Part($header);
+        $part->setBody(new Body(file_get_contents(__DIR__ . '/tmp/test.txt')));
+        $part->getBody()->setAsFile(true);
+        $this->assertEquals('file.txt', $part->getFilename());
+    }
+
+    public function testGetFilenameFromContentDescription2()
+    {
+        $header = Header::parse('Content-Description: text/plain; filename=file.txt');
+        $part   = new Part($header);
+        $part->setBody(new Body(file_get_contents(__DIR__ . '/tmp/test.txt')));
+        $part->getBody()->setAsFile(true);
+        $this->assertEquals('file.txt', $part->getFilename());
+    }
+
+    public function testGetFilenameDecoded()
+    {
+        $header = Header::parse('Content-Disposition: attachment; name=UTFfile.txt');
+        $part   = new Part($header);
+        $part->setBody(new Body(file_get_contents(__DIR__ . '/tmp/test.txt')));
+        $part->getBody()->setAsFile(true);
+        $this->assertEquals('UTFfile.txt', $part->getFilename());
+    }
+
     public function testRemoveHeader()
     {
         $header = Header::parse('Content-Type: text/plain');
@@ -67,6 +112,15 @@ class PartTest extends TestCase
         $this->assertTrue($part->hasHeader('Content-Type'));
         $part->removeHeader('Content-Type');
         $this->assertFalse($part->hasHeader('Content-Type'));
-
     }
+
+    public function testGetHeadersAsArray()
+    {
+        $header = Header::parse('Content-Disposition: attachment; name=file.txt');
+        $part   = new Part($header);
+        $headerAry = $part->getHeadersAsArray();
+        $this->assertTrue(isset($headerAry['Content-Disposition']));
+        $this->assertEquals('attachment; name=file.txt', $headerAry['Content-Disposition']);
+    }
+
 }

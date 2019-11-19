@@ -207,4 +207,46 @@ class MessageTest extends TestCase
         $this->assertInstanceOf('Pop\Mime\Part', $parsedPart);
     }
 
+    public function testParsePartWithSubParts()
+    {
+        $message = new Message();
+        $message->addHeaders([
+            'Subject'      => 'Hello World',
+            'To'           => 'nicks3123@gmail.com',
+            'Date'         => date('m/d/Y g:i A'),
+            'MIME-Version' => '1.0'
+        ]);
+
+        $message->setSubType('mixed');
+
+        $html = new Part();
+        $html->addHeader('Content-Type', 'text/html');
+        $html->setBody('<html><body><h1>This is the text message.</h1></body></html>');
+
+        $text = new Part();
+        $text->addHeader('Content-Type', 'text/plain');
+        $text->setBody('This is the text message.');
+
+        $part = new Part();
+        $part->setSubType('alternative');
+
+        $part->addParts([$html, $text]);
+
+        $file = new Part();
+        $file->addHeader('Content-Type', 'application/octet-stream');
+        $file->addFile(__DIR__ . '/tmp/test.pdf');
+
+        $message->addParts([$part, $file]);
+
+        $originalMessageString = $message->render();
+
+        $message = Message::parseMessage($originalMessageString);
+
+        $this->assertEquals(5, count($message->getHeaders()));
+        $this->assertEquals(2, count($message->getParts()));
+        $this->assertEquals(2, count($message->getParts()[0]->getParts()));
+
+
+    }
+
 }

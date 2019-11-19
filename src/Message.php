@@ -234,7 +234,7 @@ class Message extends Part
      * Parse message part string
      *
      * @param  string $partString
-     * @return Part
+     * @return Part|array
      */
     public static function parsePart($partString)
     {
@@ -254,30 +254,48 @@ class Message extends Part
             $part->addHeaders($headers);
         }
 
+        $boundary = null;
+        foreach ($part->getHeaders() as $header) {
+            if ($header->hasParameter('boundary')) {
+                $boundary = $header->getParameter('boundary');
+                break;
+            }
+        }
+
         if (!empty($bodyString)) {
-            $encoding = null;
-            $isFile   = (($part->hasHeader('Content-Disposition')) &&
-                ($part->getHeader('Content-Disposition')->isAttachment()));
-            $isForm   = (($part->hasHeader('Content-Disposition')) &&
-                ($part->getHeader('Content-Disposition')->getValue() == 'form-data'));
-            if ($part->hasHeader('Content-Transfer-Encoding')) {
-                $encodingHeader = strtolower($part->getHeader('Content-Transfer-Encoding')->getValue());
-                if ($encodingHeader == 'base64') {
-                    $encoding = Body::BASE64;
-                } else if ($encodingHeader == 'quoted-printable') {
-                    $encoding = Body::QUOTED;
+            if (null !== $boundary) {
+                $subPartStrings = self::parseBody($bodyString, $boundary);
+                $subParts       = [];
+
+                foreach ($subPartStrings as $subPartString) {
+                    $subParts[] = self::parsePart($subPartString);
                 }
-            } else if ($isForm) {
-                $encoding = Body::RAW_URL;
+                return $subParts;
+            } else {
+                $encoding = null;
+                $isFile   = (($part->hasHeader('Content-Disposition')) &&
+                    ($part->getHeader('Content-Disposition')->isAttachment()));
+                $isForm   = (($part->hasHeader('Content-Disposition')) &&
+                    ($part->getHeader('Content-Disposition')->getValue() == 'form-data'));
+                if ($part->hasHeader('Content-Transfer-Encoding')) {
+                    $encodingHeader = strtolower($part->getHeader('Content-Transfer-Encoding')->getValue());
+                    if ($encodingHeader == 'base64') {
+                        $encoding = Body::BASE64;
+                    } else if ($encodingHeader == 'quoted-printable') {
+                        $encoding = Body::QUOTED;
+                    }
+                } else if ($isForm) {
+                    $encoding = Body::RAW_URL;
+                }
+                $body = new Body($bodyString, $encoding);
+                if (null !== $encoding) {
+                    $body->setAsEncoded(true);
+                }
+                if ($isFile) {
+                    $body->setAsFile(true);
+                }
+                $part->setBody($body);
             }
-            $body = new Body($bodyString, $encoding);
-            if (null !== $encoding) {
-                $body->setAsEncoded(true);
-            }
-            if ($isFile) {
-                $body->setAsFile(true);
-            }
-            $part->setBody($body);
         }
 
         return $part;
