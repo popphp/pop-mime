@@ -344,8 +344,7 @@ class Header
     public function isAttachment()
     {
         return (($this->name == 'Content-Disposition') &&
-            (($this->value == 'attachment') || ($this->value == 'inline')) &&
-            (($this->hasParameter('filename')) || ($this->hasParameter('name'))));
+            (($this->value == 'attachment') || ($this->value == 'inline')));
     }
 
     /**
