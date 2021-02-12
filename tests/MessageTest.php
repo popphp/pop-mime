@@ -89,17 +89,17 @@ class MessageTest extends TestCase
         $formMessage = Message::createForm($formData);
         $contents    = $formMessage->render(false);
 
-        $this->assertContains('Content-Type: multipart/form-data; boundary=', $contents);
-        $this->assertContains('Content-Disposition: form-data; name=username', $contents);
-        $this->assertContains('Content-Disposition: form-data; name=password', $contents);
-        $this->assertContains('Content-Disposition: form-data; name=colors[]', $contents);
-        $this->assertContains('Content-Disposition: form-data; name=file; filename=test.pdf', $contents);
-        $this->assertContains('Content-Type: application/pdf', $contents);
-        $this->assertContains('admin%40test%2Fwhatever%25DUDE%21', $contents);
-        $this->assertContains('123456', $contents);
-        $this->assertContains('Red', $contents);
-        $this->assertContains('Green', $contents);
-        $this->assertContains('%PDF-1.4', $contents);
+        $this->assertStringContainsString('Content-Type: multipart/form-data; boundary=', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=username', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=password', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=colors[]', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=file; filename=test.pdf', $contents);
+        $this->assertStringContainsString('Content-Type: application/pdf', $contents);
+        $this->assertStringContainsString('admin%40test%2Fwhatever%25DUDE%21', $contents);
+        $this->assertStringContainsString('123456', $contents);
+        $this->assertStringContainsString('Red', $contents);
+        $this->assertStringContainsString('Green', $contents);
+        $this->assertStringContainsString('%PDF-1.4', $contents);
     }
 
     public function testCreateFormWithFileContents()
@@ -118,17 +118,17 @@ class MessageTest extends TestCase
         $formMessage = Message::createForm($formData);
         $contents    = $formMessage->render(false);
 
-        $this->assertContains('Content-Type: multipart/form-data; boundary=', $contents);
-        $this->assertContains('Content-Disposition: form-data; name=username', $contents);
-        $this->assertContains('Content-Disposition: form-data; name=password', $contents);
-        $this->assertContains('Content-Disposition: form-data; name=colors[]', $contents);
-        $this->assertContains('Content-Disposition: form-data; name=file; filename=test.pdf', $contents);
-        $this->assertContains('Content-Type: application/pdf', $contents);
-        $this->assertContains('admin%40test%2Fwhatever%25DUDE%21', $contents);
-        $this->assertContains('123456', $contents);
-        $this->assertContains('Red', $contents);
-        $this->assertContains('Green', $contents);
-        $this->assertContains('%PDF-1.4', $contents);
+        $this->assertStringContainsString('Content-Type: multipart/form-data; boundary=', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=username', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=password', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=colors[]', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=file; filename=test.pdf', $contents);
+        $this->assertStringContainsString('Content-Type: application/pdf', $contents);
+        $this->assertStringContainsString('admin%40test%2Fwhatever%25DUDE%21', $contents);
+        $this->assertStringContainsString('123456', $contents);
+        $this->assertStringContainsString('Red', $contents);
+        $this->assertStringContainsString('Green', $contents);
+        $this->assertStringContainsString('%PDF-1.4', $contents);
     }
 
     public function testParseMessageWithFile()
@@ -163,7 +163,7 @@ class MessageTest extends TestCase
 
         $boundary = $message->getBoundary();
         $this->assertNotEmpty($boundary);
-        $this->assertContains($boundary, $originalMessageString);
+        $this->assertStringContainsString($boundary, $originalMessageString);
 
         $parsedMessage = Message::parseMessage($originalMessageString);
 
@@ -172,7 +172,7 @@ class MessageTest extends TestCase
         $this->assertEquals(1, count($attachments));
         $this->assertEquals('application/octet-stream', $attachments[0]->getContentType());
         $this->assertEquals('test.pdf', $attachments[0]->getFilename());
-        $this->assertContains('PDF', $attachments[0]->getContents());
+        $this->assertStringContainsString('PDF', $attachments[0]->getContents());
 
         $this->assertEquals(5, count($message->getHeaders()));
         $this->assertEquals(5, count($parsedMessage->getHeaders()));
@@ -203,7 +203,7 @@ class MessageTest extends TestCase
 
         $parsedPart = Message::parsePart($part->render());
 
-        $this->assertContains('Hello World', $part->getContents());
+        $this->assertStringContainsString('Hello World', $part->getContents());
         $this->assertInstanceOf('Pop\Mime\Part', $parsedPart);
     }
 

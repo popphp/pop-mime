@@ -47,7 +47,7 @@ class PartTest extends TestCase
         $part = new Part();
         $body = new Body('admin@something%testwhat/ever', Body::URL);
         $part->setBody($body);
-        $this->assertContains('admin%40something%25testwhat%2Fever', $part->render());
+        $this->assertStringContainsString('admin%40something%25testwhat%2Fever', $part->render());
         $this->assertEquals('admin@something%testwhat/ever', $part->getContents());
     }
 

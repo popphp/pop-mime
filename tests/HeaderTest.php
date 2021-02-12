@@ -39,8 +39,8 @@ class HeaderTest extends TestCase
     {
         $header = new Header('Set-Cookie', ['123456', '987654']);
         $headerString = $header->render();
-        $this->assertContains('Set-Cookie: 123456', $headerString);
-        $this->assertContains('Set-Cookie: 987654', $headerString);
+        $this->assertStringContainsString('Set-Cookie: 123456', $headerString);
+        $this->assertStringContainsString('Set-Cookie: 987654', $headerString);
     }
 
     public function testMultipleValuesWithWrap()
@@ -48,16 +48,16 @@ class HeaderTest extends TestCase
         $header = new Header('Set-Cookie', ['123456', '987654']);
         $header->setWrap(100);
         $headerString = $header->render();
-        $this->assertContains('Set-Cookie: 123456', $headerString);
-        $this->assertContains('Set-Cookie: 987654', $headerString);
+        $this->assertStringContainsString('Set-Cookie: 123456', $headerString);
+        $this->assertStringContainsString('Set-Cookie: 987654', $headerString);
     }
 
     public function testMultipleValuesWithParams()
     {
         $header = new Header('Set-Cookie', ['123456', '987654'], ['foo' => 'bar']);
         $headerString = $header->render();
-        $this->assertContains('Set-Cookie: 123456; foo=bar', $headerString);
-        $this->assertContains('Set-Cookie: 987654; foo=bar', $headerString);
+        $this->assertStringContainsString('Set-Cookie: 123456; foo=bar', $headerString);
+        $this->assertStringContainsString('Set-Cookie: 987654; foo=bar', $headerString);
     }
 
     public function testParseMultipleValues()

@@ -1,7 +1,7 @@
 pop-mime
 ========
 
-[![Build Status](https://travis-ci.org/popphp/pop-mime.svg?branch=master)](https://travis-ci.org/popphp/pop-mime)
+[![Build Status](https://github.com/popphp/pop-mime/workflows/phpunit/badge.svg)](https://github.com/popphp/pop-mime/actions)
 [![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-mime)](http://cc.popphp.org/pop-queue/)
 
 OVERVIEW
