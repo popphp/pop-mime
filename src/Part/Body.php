@@ -335,7 +335,7 @@ class Body
             $content = ($this->split === true) ? chunk_split($content) : chunk_split($content, (int)$this->split);
         }
 
-        return $content;
+        return (string)$content;
     }
 
     /**
