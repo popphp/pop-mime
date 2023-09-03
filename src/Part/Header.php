@@ -21,7 +21,7 @@ namespace Pop\Mime\Part;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    1.1.0
+ * @version    1.2.0
  */
 class Header
 {
