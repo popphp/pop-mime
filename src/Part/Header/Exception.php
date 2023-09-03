@@ -11,10 +11,10 @@
 /**
  * @namespace
  */
-namespace Pop\Mime\Part;
+namespace Pop\Mime\Part\Header;
 
 /**
- * MIME part header exception class
+ * MIME part header value exception class
  *
  * @category   Pop
  * @package    Pop\Mime

@@ -26,12 +26,14 @@ class MessageTest extends TestCase
             'Date'         => date('m/d/Y g:i A')
         ]);
 
-        $header = new Header('Content-Disposition', 'form-data');
-        $header->addParameter('name', 'image')
+        $headerValue = new Header\Value('form-data');
+        $headerValue->addParameter('name', 'image')
             ->addParameter('filename', '/tmp/some image.jpg')
             ->addParameter('foo', 'Some other param')
             ->addParameter('bar', 'another')
             ->addParameter('baz', 'one more parameter');
+
+        $header = new Header('Content-Disposition', $headerValue);
 
         $header->setWrap(76)
             ->setIndent("\t");

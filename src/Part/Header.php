@@ -33,16 +33,10 @@ class Header
     protected $name = null;
 
     /**
-     * Header value
-     * @var string|array
-     */
-    protected $value = null;
-
-    /**
-     * Header parameters
+     * Header values
      * @var array
      */
-    protected $parameters = [];
+    protected $values = [];
 
     /**
      * Header wrap
@@ -62,19 +56,18 @@ class Header
      * Instantiate the header object
      *
      * @param string $name
-     * @param string $value
-     * @param array  $parameters
+     * @param mixed  $value
      */
-    public function __construct($name = null, $value = null, array $parameters = [])
+    public function __construct($name, $value = null)
     {
-        if (null !== $name) {
-            $this->setName($name);
-        }
+        $this->setName($name);
+
         if (null !== $value) {
-            $this->setValue($value);
-        }
-        if (!empty($parameters)) {
-            $this->addParameters($parameters);
+            if (is_array($value)) {
+                $this->addValues($value);
+            } else {
+                $this->addValue($value);
+            }
         }
     }
 
@@ -86,60 +79,23 @@ class Header
      */
     public static function parse($header)
     {
-        $name       = trim(substr($header, 0, strpos($header, ':')));
-        $value      = null;
-        $parameters = [];
+        $name = trim(substr($header, 0, strpos($header, ':')));
 
         // Handle multiple values
         if (substr_count($header, $name) > 1) {
             $values = array_map('trim', array_filter(explode($name . ':', $header)));
-            foreach ($values as $i => $value) {
-                if (strpos($value, ';') !== false) {
-                    $params     = array_map('trim', explode(';', trim(substr($value,  (strpos($value, ';') + 1)))));
-                    $values[$i] = trim(substr($value, 0, strpos($value, ';')));
-                    foreach ($params as $param) {
-                        if (strpos($param, '=') !== false) {
-                            [$paramName, $paramValue] = self::parseParameter($param);
-                            $parameters[$paramName] = $paramValue;
-                        }
-                    }
-                }
-            }
-            return new self($name, $values, $parameters);
+        // Else, handle single value
         } else {
-            if (strpos($header, ';') !== false) {
-                $value  = substr($header, (strpos($header, ':') + 1));
-                $value  = trim(substr($value, 0, strpos($value, ';')));
-                $params = array_map('trim', explode(';', trim(substr($header,  (strpos($header, ';') + 1)))));
-                foreach ($params as $param) {
-                    if (strpos($param, '=') !== false) {
-                        [$paramName, $paramValue] = self::parseParameter($param);
-                        $parameters[$paramName] = $paramValue;
-                    }
-                }
-            } else {
-                $value = trim(substr($header, (strpos($header, ':') + 1)));
-            }
-
-            return new self($name, $value, $parameters);
+            $values = [trim(substr($header, (strpos($header, ':') + 1)))];
         }
-    }
 
-    /**
-     * Render the header string
-     *
-     * @param  string $parameter
-     * @return array
-     */
-    public static function parseParameter($parameter)
-    {
-        $paramName  = substr($parameter, 0, strpos($parameter, '='));
-        $paramValue = substr($parameter, (strpos($parameter, '=')+ 1));
-        if ((substr($paramValue, 0, 1) == '"') && (substr($paramValue, -1) == '"')) {
-            $paramValue = substr($paramValue, 1);
-            $paramValue = substr($paramValue, 0, -1);
+        $headerObject = new static($name);
+
+        foreach ($values as $value) {
+            $headerObject->addValue(Header\Value::parse($value));
         }
-        return [$paramName, $paramValue];
+
+        return $headerObject;
     }
 
     /**
@@ -165,111 +121,116 @@ class Header
     }
 
     /**
-     * Set the header value
+     * Add header values
+     *
+     * @param  array $values
+     * @return Header
+     */
+    public function addValues(array $values)
+    {
+        foreach ($values as $value) {
+            $this->addValue($value);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add a header value
      *
      * @param  string $value
+     * @param  string $scheme
+     * @param  array  $parameters
      * @return Header
      */
-    public function setValue($value)
+    public function addValue($value, $scheme = null, array $parameters = [])
     {
-        $this->value = $value;
+        if (is_string($value)) {
+            $value = new Header\Value($value, $scheme, $parameters);
+        }
+        $this->values[] = $value;
         return $this;
     }
 
     /**
-     * Get the header value
-     *
-     * @return string|array
-     */
-    public function getValue()
-    {
-        return $this->value;
-    }
-
-    /**
-     * Add the header parameters
-     *
-     * @param  array $parameters
-     * @return Header
-     */
-    public function addParameters(array $parameters)
-    {
-        $this->parameters = $parameters;
-        return $this;
-    }
-
-    /**
-     * Set a header parameter
-     *
-     * @param string $name
-     * @param string $value
-     * @return Header
-     */
-    public function addParameter($name, $value)
-    {
-        $this->parameters[$name] = $value;
-        return $this;
-    }
-
-    /**
-     * Get the header parameters
+     * Get the header values
      *
      * @return array
      */
-    public function getParameters()
+    public function getValues()
     {
-        return $this->parameters;
+        return $this->values;
     }
 
     /**
-     * Get the header parameters as string
+     * Get a header value
      *
-     * @return string
+     * @return Header\Value|null
      */
-    public function getParametersAsString()
+    public function getValue($i)
     {
-        $parameters = [];
+        return (isset($this->values[$i])) ? $this->values[$i] : null;
+    }
 
-        foreach ($this->parameters as $name => $value) {
-            if (strpos($value, ' ') !== false) {
-                $value = '"' . $value . '"';
+
+    /**
+     * Get index of header value
+     *
+     * @param  string $value
+     * @return boolean
+     */
+    public function getValueIndex($value)
+    {
+        $result = null;
+
+        foreach ($this->values as $i => $val) {
+            if ($val->getValue() == $value) {
+                $result = $i;
+                break;
             }
-            $parameters[] = $name . '=' . $value;
         }
 
-        return implode('; ', $parameters);
+        return $result;
     }
 
     /**
-     * Get a header parameter
+     * Determine if the header has a value
      *
-     * @param  string $name
-     * @return string
-     */
-    public function getParameter($name)
-    {
-        return (isset($this->parameters[$name])) ? $this->parameters[$name] : null;
-    }
-
-    /**
-     * Has header parameters
-     *
+     * @param  string $value
      * @return boolean
      */
-    public function hasParameters()
+    public function hasValue($value)
     {
-        return (count($this->parameters) > 0);
+        $result = false;
+
+        foreach ($this->values as $val) {
+            if ($val->getValue() == $value) {
+                $result = true;
+                break;
+            }
+        }
+
+        return $result;
     }
 
     /**
-     * Has a header parameter
+     * Get the header values as strings
      *
-     * @param  string $name
-     * @return boolean
+     * @param  string $delimiter
+     * @return string|array
      */
-    public function hasParameter($name)
+    public function getValuesAsStrings($delimiter = null)
     {
-        return (isset($this->parameters[$name]));
+        if (count($this->values) == 1) {
+            return (string)$this->values[0];
+        } else {
+            $values = [];
+            foreach ($this->values as $value) {
+                $values[] = (string)$value;
+            }
+
+            return (null !== $delimiter) ? implode($delimiter, $values) : $values;
+        }
     }
 
     /**
@@ -343,8 +304,17 @@ class Header
      */
     public function isAttachment()
     {
-        return (($this->name == 'Content-Disposition') &&
-            (($this->value == 'attachment') || ($this->value == 'inline')));
+        $result = false;
+
+        foreach ($this->values as $value) {
+            if (($this->name == 'Content-Disposition') &&
+                ((stripos((string)$value, 'attachment') !== false) || (stripos((string)$value, 'inline') !== false))) {
+                $result = true;
+                break;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -354,46 +324,18 @@ class Header
      */
     public function render()
     {
-        $parameters = [];
+        $headers = [];
 
-        if (count($this->parameters) > 0) {
-            $parameters = [];
-            foreach ($this->parameters as $name => $value) {
-                if (strpos($value, ' ') !== false) {
-                    $value = '"' . $value . '"';
-                }
-                $parameters[] = $name . '=' . $value;
-            }
-        }
+        foreach ($this->values as $value) {
+            $header = $this->name . ': ' . $value;
 
-        if (is_array($this->value)) {
-            $headers = [];
-            foreach ($this->value as $value) {
-                $hdr = $this->name . ': ' . $value;
-
-                if (count($parameters) > 0) {
-                    $hdr .= '; ' . implode('; ', $parameters);
-                }
-
-                if ((int)$this->wrap !== 0) {
-                    $hdr = wordwrap($hdr, $this->wrap, "\r\n" . $this->indent);
-                }
-                $headers[] = $hdr;
-            }
-            $header = implode("\r\n", $headers);
-        } else {
-            $header = $this->name . ': ' . $this->value;
-
-            if (count($parameters) > 0) {
-                $header .= '; ' . implode('; ', $parameters);
-            }
-
-            if ((int)$this->wrap !== 0) {
+            if ((int)$this->wrap != 0) {
                 $header = wordwrap($header, $this->wrap, "\r\n" . $this->indent);
             }
+            $headers[] = $header;
         }
 
-        return $header;
+        return implode("\r\n", $headers);
     }
 
     /**

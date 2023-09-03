@@ -138,11 +138,7 @@ class Part
         $headers = [];
 
         foreach ($this->headers as $header) {
-            $headerValue = $header->getValue();
-            if ($header->hasParameters()) {
-                $headerValue .= '; ' . $header->getParametersAsString();
-            }
-            $headers[$header->getName()] = $headerValue;
+            $headers[$header->getName()] = $header->getValuesAsStrings();
         }
 
         return $headers;
@@ -218,8 +214,8 @@ class Part
     public function addFile($file, $disposition = 'attachment', $encoding = Part\Body::BASE64, $split = true)
     {
         if (null !== $disposition) {
-            $header = new Part\Header('Content-Disposition', $disposition);
-            $header->addParameter('filename', basename($file));
+            $header = new Part\Header('Content-Disposition');
+            $header->addValue($disposition, null, ['filename' => basename($file)]);
             $this->addHeader($header);
         }
         $this->body = new Part\Body();
@@ -447,8 +443,8 @@ class Part
     {
         $contentType = null;
 
-        if ($this->hasHeader('Content-Type')) {
-            $contentType = $this->getHeader('Content-Type')->getValue();
+        if ($this->hasHeader('Content-Type') && (count($this->getHeader('Content-Type')->getValues()) == 1)) {
+            $contentType = (string)$this->getHeader('Content-Type')->getValue(0);
         }
 
         return $contentType;
@@ -465,35 +461,35 @@ class Part
 
         if ($this->getBody()->isFile()) {
             // Check Content-Disposition header (standard)
-            if ($this->hasHeader('Content-Disposition')) {
+            if ($this->hasHeader('Content-Disposition') && (count($this->getHeader('Content-Disposition')->getValues()) == 1)) {
                 $header = $this->getHeader('Content-Disposition');
-                if ($header->hasParameter('filename')) {
-                    $filename = $header->getParameter('filename');
-                } else if ($header->hasParameter('name')) {
-                    $filename = $header->getParameter('name');
+                if ($header->getValue(0)->hasParameter('filename')) {
+                    $filename = $header->getValue(0)->getParameter('filename');
+                } else if ($header->getValue(0)->hasParameter('name')) {
+                    $filename = $header->getValue(0)->getParameter('name');
                 }
             }
 
             // Else, check Content-Type header (non-standard)
             if (null === $filename) {
-                if ($this->hasHeader('Content-Type')) {
+                if ($this->hasHeader('Content-Type') && (count($this->getHeader('Content-Type')->getValues()) == 1)) {
                     $header = $this->getHeader('Content-Type');
-                    if ($header->hasParameter('filename')) {
-                        $filename = $header->getParameter('filename');
-                    } else if ($header->hasParameter('name')) {
-                        $filename = $header->getParameter('name');
+                    if ($header->getValue(0)->hasParameter('filename')) {
+                        $filename = $header->getValue(0)->getParameter('filename');
+                    } else if ($header->getValue(0)->hasParameter('name')) {
+                        $filename = $header->getValue(0)->getParameter('name');
                     }
                 }
             }
 
             // Else, check Content-Description header (non-standard)
             if (null === $filename) {
-                if ($this->hasHeader('Content-Description')) {
+                if ($this->hasHeader('Content-Description') && (count($this->getHeader('Content-Description')->getValues()) == 1)) {
                     $header = $this->getHeader('Content-Description');
-                    if ($header->hasParameter('filename')) {
-                        $filename = $header->getParameter('filename');
-                    } else if ($header->hasParameter('name')) {
-                        $filename = $header->getParameter('name');
+                    if ($header->getValue(0)->hasParameter('filename')) {
+                        $filename = $header->getValue(0)->getParameter('filename');
+                    } else if ($header->getValue(0)->hasParameter('name')) {
+                        $filename = $header->getValue(0)->getParameter('name');
                     }
                 }
             }
@@ -559,7 +555,7 @@ class Part
         $boundary = (!$this->hasBoundary()) ? $this->generateBoundary() : $this->boundary;
         if (!($this->hasHeader('Content-Type')) && ($this->hasSubType())) {
             $this->addHeader(
-                new Part\Header('Content-Type', 'multipart/' . $this->subType . '; boundary=' . $boundary)
+                new Part\Header('Content-Type', new Part\Header\Value('multipart/' . $this->subType, null, ['boundary' =>  $boundary]))
             );
         }
         if ($this->hasHeaders()) {

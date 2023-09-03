@@ -45,8 +45,11 @@ class Message extends Part
         $parts    = [];
 
         foreach ($headers as $header) {
-            if ($header->hasParameter('boundary')) {
-                $boundary = $header->getParameter('boundary');
+            foreach ($header->getValues() as $headerValue) {
+                if ($headerValue->hasParameter('boundary')) {
+                    $boundary = $headerValue->getParameter('boundary');
+                    break;
+                }
             }
         }
 
@@ -80,12 +83,12 @@ class Message extends Part
         $formData = [];
 
         foreach ($form->getParts() as $part) {
-            if ($part->hasHeader('Content-Disposition')) {
+            if (($part->hasHeader('Content-Disposition')) && (count($part->getHeader('Content-Disposition')->getValues()) == 1)) {
                 $disposition = $part->getHeader('Content-Disposition');
-                if (($disposition->getValue() == 'form-data') && ($disposition->hasParameter('name'))) {
-                    $name     = $disposition->getParameter('name');
+                if (($disposition->hasValue('form-data')) && ($disposition->getValue(0)->hasParameter('name'))) {
+                    $name     = $disposition->getValue(0)->getParameter('name');
                     $contents = $part->getContents();
-                    $filename = ($disposition->hasParameter('filename')) ? $disposition->getParameter('filename') : null;
+                    $filename = ($disposition->getValue(0)->hasParameter('filename')) ? $disposition->getValue(0)->getParameter('filename') : null;
 
                     if (substr($name, -2) == '[]') {
                         $name = substr($name, 0, -2);
@@ -119,7 +122,7 @@ class Message extends Part
     public static function createForm($fields = [])
     {
         $message = new self();
-        $header  = new Header('Content-Type', 'multipart/form-data', ['boundary' => $message->generateBoundary()]);
+        $header  = new Header('Content-Type', new Header\Value('multipart/form-data', null, ['boundary' => $message->generateBoundary()]));
         $message->addHeader($header);
 
         if (!empty($fields)) {
@@ -148,7 +151,7 @@ class Message extends Part
                             $fileContents = file_get_contents($value['filename']);
                         }
 
-                        $fieldPart = new Part(new Header('Content-Disposition', 'form-data', $parameters));
+                        $fieldPart = new Part(new Header('Content-Disposition', new Header\Value('form-data', null, $parameters)));
                         if (null !== $contentType) {
                             $fieldPart->addHeader('Content-Type', $contentType);
                         }
@@ -157,14 +160,14 @@ class Message extends Part
                     } else {
                         foreach ($value as $val) {
                             $fieldPart = new Part(
-                                new Header('Content-Disposition', 'form-data', ['name' => $name . '[]'])
+                                new Header('Content-Disposition', new Header\Value('form-data', null, ['name' => $name . '[]']))
                             );
                             $fieldPart->setBody(new Body($val, Body::RAW_URL));
                             $message->addPart($fieldPart);
                         }
                     }
                 } else {
-                    $fieldPart = new Part(new Header('Content-Disposition', 'form-data', ['name' => $name]));
+                    $fieldPart = new Part(new Header('Content-Disposition', new Header\Value('form-data', null, ['name' => $name])));
                     $fieldPart->setBody(new Body($value, Body::RAW_URL));
                     $message->addPart($fieldPart);
                 }
@@ -256,9 +259,11 @@ class Message extends Part
 
         $boundary = null;
         foreach ($part->getHeaders() as $header) {
-            if ($header->hasParameter('boundary')) {
-                $boundary = $header->getParameter('boundary');
-                break;
+            foreach ($header->getValues() as $headerValue) {
+                if ($headerValue->hasParameter('boundary')) {
+                    $boundary = $headerValue->getParameter('boundary');
+                    break;
+                }
             }
         }
 
@@ -276,9 +281,9 @@ class Message extends Part
                 $isFile   = (($part->hasHeader('Content-Disposition')) &&
                     ($part->getHeader('Content-Disposition')->isAttachment()));
                 $isForm   = (($part->hasHeader('Content-Disposition')) &&
-                    ($part->getHeader('Content-Disposition')->getValue() == 'form-data'));
-                if ($part->hasHeader('Content-Transfer-Encoding')) {
-                    $encodingHeader = strtolower($part->getHeader('Content-Transfer-Encoding')->getValue());
+                    ($part->getHeader('Content-Disposition')->hasValue('form-data')));
+                if ($part->hasHeader('Content-Transfer-Encoding') && (count($part->getHeader('Content-Transfer-Encoding')->getValues()) == 1)) {
+                    $encodingHeader = strtolower($part->getHeader('Content-Transfer-Encoding')->getValue(0));
                     if ($encodingHeader == 'base64') {
                         $encoding = Body::BASE64;
                     } else if ($encodingHeader == 'quoted-printable') {
