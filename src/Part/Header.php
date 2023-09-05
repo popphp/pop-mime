@@ -165,9 +165,10 @@ class Header
     /**
      * Get a header value
      *
+     * @param  int $i
      * @return Header\Value|null
      */
-    public function getValue($i)
+    public function getValue($i = 0)
     {
         return (isset($this->values[$i])) ? $this->values[$i] : null;
     }
@@ -191,6 +192,17 @@ class Header
         }
 
         return $result;
+    }
+
+    /**
+     * Determine if the header has a value at index
+     *
+     * @param  int $i
+     * @return boolean
+     */
+    public function hasValueAtIndex($i)
+    {
+        return (isset($this->values[$i]));
     }
 
     /**
