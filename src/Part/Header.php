@@ -163,7 +163,7 @@ class Header
     }
 
     /**
-     * Get a header value
+     * Get a header value object
      *
      * @param  int $i
      * @return Header\Value|null
@@ -173,6 +173,16 @@ class Header
         return (isset($this->values[$i])) ? $this->values[$i] : null;
     }
 
+    /**
+     * Get a header value as a string
+     *
+     * @param  int $i
+     * @return string|null
+     */
+    public function getValueAsString($i = 0)
+    {
+        return (isset($this->values[$i])) ? (string)$this->values[$i] : null;
+    }
 
     /**
      * Get index of header value

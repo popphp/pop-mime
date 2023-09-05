@@ -96,4 +96,11 @@ class HeaderTest extends TestCase
         $this->assertTrue($header->hasValueAtIndex(0));
     }
 
+    public function testGetValueAsObject()
+    {
+        $headerValue = new Header\Value('attachment', null, ['filename' => 'some file.pdf']);
+        $header = new Header('Content-Disposition', $headerValue);
+        $this->assertTrue(is_string($header->getValueAsString()));
+    }
+
 }
