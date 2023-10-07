@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Mime\Part;
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    1.2.0
+ * @version    2.0.0
  */
 class Body
 {
@@ -37,52 +37,52 @@ class Body
 
     /**
      * Content
-     * @var string
+     * @var ?string
      */
-    protected $content = null;
+    protected ?string $content = null;
 
     /**
      * Encoding
-     * @var string
+     * @var ?string
      */
-    protected $encoding = null;
+    protected ?string $encoding = null;
 
     /**
      * Chunk split
-     * @var int|boolean
+     * @var int|bool|null
      */
-    protected $split = null;
+    protected int|bool|null $split = null;
 
     /**
      * Is file flag
-     * @var boolean
+     * @var bool
      */
-    protected $isFile = false;
+    protected bool $isFile = false;
 
     /**
      * Is encoded flag
-     * @var boolean
+     * @var bool
      */
-    protected $isEncoded = false;
+    protected bool $isEncoded = false;
 
     /**
      * Constructor
      *
      * Instantiate the body object
      *
-     * @param string $content
-     * @param string $encoding
-     * @param int    $split
+     * @param ?string       $content
+     * @param ?string       $encoding
+     * @param int|bool|null $split
      */
-    public function __construct($content = null, $encoding = null, $split = null)
+    public function __construct(?string $content = null, ?string $encoding = null, int|bool|null $split = null)
     {
-        if (null !== $content) {
+        if ($content !== null) {
             $this->setContent($content);
         }
-        if (null !== $encoding) {
+        if ($encoding !== null) {
             $this->setEncoding($encoding);
         }
-        if (null !== $split) {
+        if ($split !== null) {
             $this->setSplit($split);
         }
     }
@@ -93,7 +93,7 @@ class Body
      * @param  string $content
      * @return Body
      */
-    public function setContent($content)
+    public function setContent(string $content): Body
     {
         $this->content = $content;
         return $this;
@@ -102,13 +102,13 @@ class Body
     /**
      * Set the body content from file
      *
-     * @param  string $file
-     * @param  string $encoding
-     * @param  string $split
+     * @param  string        $file
+     * @param  ?string       $encoding
+     * @param  int|bool|null $split
      * @throws Exception
      * @return Body
      */
-    public function setContentFromFile($file, $encoding = null, $split = null)
+    public function setContentFromFile(string $file, ?string $encoding = null, int|bool|null $split = null): Body
     {
         if (!file_exists($file)) {
             throw new Exception("Error: The file '" . $file . "' does not exist.");
@@ -117,10 +117,10 @@ class Body
         $this->content = file_get_contents($file);
         $this->setAsFile(true);
 
-        if (null !== $encoding) {
+        if ($encoding !== null) {
             $this->setEncoding($encoding);
         }
-        if (null !== $split) {
+        if ($split !== null) {
             $this->setSplit($split);
         }
 
@@ -132,7 +132,7 @@ class Body
      *
      * @return string
      */
-    public function getContent()
+    public function getContent(): string
     {
         return $this->content;
     }
@@ -140,11 +140,11 @@ class Body
     /**
      * Has body content
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasContent()
+    public function hasContent(): bool
     {
-        return (null !== $this->content);
+        return ($this->content !== null);
     }
 
     /**
@@ -153,7 +153,7 @@ class Body
      * @param  string $encoding
      * @return Body
      */
-    public function setEncoding($encoding)
+    public function setEncoding(string $encoding): Body
     {
         switch ($encoding) {
             case self::BASE64:
@@ -168,9 +168,9 @@ class Body
     /**
      * Get the encoding
      *
-     * @return string
+     * @return string|null
      */
-    public function getEncoding()
+    public function getEncoding(): string|null
     {
         return $this->encoding;
     }
@@ -178,19 +178,19 @@ class Body
     /**
      * Has encoding
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasEncoding()
+    public function hasEncoding(): bool
     {
-        return (null !== $this->encoding);
+        return ($this->encoding !== null);
     }
 
     /**
      * Is encoding base64
      *
-     * @return boolean
+     * @return bool
      */
-    public function isBase64Encoding()
+    public function isBase64Encoding(): bool
     {
         return ($this->encoding == self::BASE64);
     }
@@ -198,9 +198,9 @@ class Body
     /**
      * Is encoding quoted-printable
      *
-     * @return boolean
+     * @return bool
      */
-    public function isQuotedEncoding()
+    public function isQuotedEncoding(): bool
     {
         return ($this->encoding == self::QUOTED);
     }
@@ -208,9 +208,9 @@ class Body
     /**
      * Is encoding URL
      *
-     * @return boolean
+     * @return bool
      */
-    public function isUrlEncoding()
+    public function isUrlEncoding(): bool
     {
         return ($this->encoding == self::URL);
     }
@@ -218,9 +218,9 @@ class Body
     /**
      * Is encoding raw URL
      *
-     * @return boolean
+     * @return bool
      */
-    public function isRawUrlEncoding()
+    public function isRawUrlEncoding(): bool
     {
         return ($this->encoding == self::RAW_URL);
     }
@@ -228,10 +228,10 @@ class Body
     /**
      * Set the split
      *
-     * @param  int|boolean $split
+     * @param  int|bool $split
      * @return Body
      */
-    public function setSplit($split)
+    public function setSplit(int|bool $split): Body
     {
         $this->split = $split;
         return $this;
@@ -240,9 +240,9 @@ class Body
     /**
      * Get the split
      *
-     * @return int|boolean
+     * @return int|bool
      */
-    public function getSplit()
+    public function getSplit(): int|bool
     {
         return $this->split;
     }
@@ -250,20 +250,20 @@ class Body
     /**
      * Has split
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasSplit()
+    public function hasSplit(): bool
     {
-        return (null !== $this->split);
+        return ($this->split !== null);
     }
 
     /**
      * Set as file
      *
-     * @param  boolean $isFile
+     * @param  bool $isFile
      * @return Body
      */
-    public function setAsFile($isFile)
+    public function setAsFile(bool $isFile): Body
     {
         $this->isFile = (bool)$isFile;
         return $this;
@@ -272,9 +272,9 @@ class Body
     /**
      * Is file
      *
-     * @return boolean
+     * @return bool
      */
-    public function isFile()
+    public function isFile(): bool
     {
         return $this->isFile;
     }
@@ -282,10 +282,10 @@ class Body
     /**
      * Set as encoded
      *
-     * @param  boolean $isEncoded
+     * @param  bool $isEncoded
      * @return Body
      */
-    public function setAsEncoded($isEncoded)
+    public function setAsEncoded(bool $isEncoded): body
     {
         $this->isEncoded = (bool)$isEncoded;
         return $this;
@@ -294,9 +294,9 @@ class Body
     /**
      * Is encoded
      *
-     * @return boolean
+     * @return bool
      */
-    public function isEncoded()
+    public function isEncoded(): bool
     {
         return $this->isEncoded;
     }
@@ -306,7 +306,7 @@ class Body
      *
      * @return string
      */
-    public function render()
+    public function render(): string
     {
         $content = $this->content;
 
@@ -331,7 +331,7 @@ class Body
             }
         }
 
-        if (null !== $this->split) {
+        if ($this->split !== null) {
             $content = ($this->split === true) ? chunk_split($content) : chunk_split($content, (int)$this->split);
         }
 
@@ -343,7 +343,7 @@ class Body
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->render();
     }

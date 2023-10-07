@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -13,15 +13,17 @@
  */
 namespace Pop\Mime;
 
+use Pop\Mime\Part\Exception;
+
 /**
  * MIME message part class
  *
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    1.2.0
+ * @version    2.0.0
  */
 class Part
 {
@@ -30,31 +32,31 @@ class Part
      * Headers
      * @var array
      */
-    protected $headers = [];
+    protected array $headers = [];
 
     /**
      * Body
-     * @var Part\Body
+     * @var ?Part\Body
      */
-    protected $body = null;
+    protected ?Part\Body $body = null;
 
     /**
      * Nested parts
      * @var array
      */
-    protected $parts = [];
+    protected array $parts = [];
 
     /**
-     * Sub-type
-     * @var string
+     * Subtype
+     * @var ?string
      */
-    protected $subType = null;
+    protected ?string $subType = null;
 
     /**
      * Boundary
-     * @var string
+     * @var ?string
      */
-    protected $boundary = null;
+    protected ?string $boundary = null;
 
     /**
      * Constructor
@@ -85,11 +87,11 @@ class Part
     /**
      * Add a header
      *
-     * @param  Part\Header|string $header
-     * @param  string             $value
+     * @param  Part\Header|string  $header
+     * @param  ?string             $value
      * @return Part
      */
-    public function addHeader($header, $value = null)
+    public function addHeader(Part\Header|string $header, ?string $value = null): Part
     {
         if ($header instanceof Part\Header) {
             $this->headers[$header->getName()] = $header;
@@ -106,7 +108,7 @@ class Part
      * @param  array $headers
      * @return Part
      */
-    public function addHeaders(array $headers)
+    public function addHeaders(array $headers): Part
     {
         foreach ($headers as $header => $value) {
             if ($value instanceof Part\Header) {
@@ -123,7 +125,7 @@ class Part
      *
      * @return array
      */
-    public function getHeaders()
+    public function getHeaders(): array
     {
         return $this->headers;
     }
@@ -133,7 +135,7 @@ class Part
      *
      * @return array
      */
-    public function getHeadersAsArray()
+    public function getHeadersAsArray(): array
     {
         $headers = [];
 
@@ -148,20 +150,20 @@ class Part
      * Get headers
      *
      * @param  string $name
-     * @return Part\Header
+     * @return Part\Header|null
      */
-    public function getHeader($name)
+    public function getHeader(string $name): Part\Header|null
     {
-        return (isset($this->headers[$name])) ? $this->headers[$name] : null;
+        return $this->headers[$name] ?? null;
     }
 
     /**
      * Has header
      *
      * @param  string $name
-     * @return boolean
+     * @return bool
      */
-    public function hasHeader($name)
+    public function hasHeader(string $name): bool
     {
         return (isset($this->headers[$name]));
     }
@@ -169,9 +171,9 @@ class Part
     /**
      * Has headers
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasHeaders()
+    public function hasHeaders(): bool
     {
         return (count($this->headers) > 0);
     }
@@ -182,7 +184,7 @@ class Part
      * @param  string $name
      * @return Part
      */
-    public function removeHeader($name)
+    public function removeHeader(string $name): Part
     {
         if (isset($this->headers[$name])) {
             unset($this->headers[$name]);
@@ -196,7 +198,7 @@ class Part
      * @param  Part\Body|string $body
      * @return Part
      */
-    public function setBody($body)
+    public function setBody(Part\Body|string$body): Part
     {
         $this->body = ($body instanceof Part\Body) ? $body : new Part\Body($body);
         return $this;
@@ -205,15 +207,18 @@ class Part
     /**
      * Add file as body
      *
-     * @param  string      $file
-     * @param  string      $disposition
-     * @param  string      $encoding
-     * @param  int|boolean $split
+     * @param string   $file
+     * @param string   $disposition
+     * @param string   $encoding
+     * @param int|bool $split
+     * @throws Exception
      * @return Part
      */
-    public function addFile($file, $disposition = 'attachment', $encoding = Part\Body::BASE64, $split = true)
+    public function addFile(
+        string $file, string $disposition = 'attachment', string $encoding = Part\Body::BASE64, int|bool $split = true
+    ): Part
     {
-        if (null !== $disposition) {
+        if ($disposition !== null) {
             $header = new Part\Header('Content-Disposition');
             $header->addValue($disposition, null, ['filename' => basename($file)]);
             $this->addHeader($header);
@@ -228,7 +233,7 @@ class Part
      *
      * @return Part\Body
      */
-    public function getBody()
+    public function getBody(): Part\Body
     {
         return $this->body;
     }
@@ -236,11 +241,11 @@ class Part
     /**
      * Has body
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasBody()
+    public function hasBody(): bool
     {
-        return (null !== $this->body);
+        return ($this->body !== null);
     }
 
     /**
@@ -249,7 +254,7 @@ class Part
      * @param  Part $part
      * @return Part
      */
-    public function addPart(Part $part)
+    public function addPart(Part $part): Part
     {
         $this->parts[] = $part;
         return $this;
@@ -261,7 +266,7 @@ class Part
      * @param  array $parts
      * @return Part
      */
-    public function addParts(array $parts)
+    public function addParts(array $parts): Part
     {
         foreach ($parts as $part) {
             if (is_array($part)) {
@@ -288,7 +293,7 @@ class Part
      *
      * @return array
      */
-    public function getParts()
+    public function getParts(): array
     {
         return $this->parts;
     }
@@ -296,43 +301,43 @@ class Part
     /**
      * Has nested parts
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasParts()
+    public function hasParts(): bool
     {
         return (count($this->parts) > 0);
     }
 
     /**
-     * Set sub-type
+     * Set subtype
      *
      * @param  string $subType
      * @return Part
      */
-    public function setSubType($subType)
+    public function setSubType(string $subType): Part
     {
         $this->subType = $subType;
         return $this;
     }
 
     /**
-     * Get sub-type
+     * Get subtype
      *
      * @return string
      */
-    public function getSubType()
+    public function getSubType(): string
     {
         return $this->subType;
     }
 
     /**
-     * Has sub-type
+     * Has subtype
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasSubType()
+    public function hasSubType(): bool
     {
-        return (null !== $this->subType);
+        return ($this->subType !== null);
     }
 
     /**
@@ -341,7 +346,7 @@ class Part
      * @param  string $boundary
      * @return Part
      */
-    public function setBoundary($boundary)
+    public function setBoundary(string $boundary): Part
     {
         $this->boundary = $boundary;
         return $this;
@@ -352,7 +357,7 @@ class Part
      *
      * @return string
      */
-    public function getBoundary()
+    public function getBoundary(): string
     {
         return $this->boundary;
     }
@@ -360,11 +365,11 @@ class Part
     /**
      * Has boundary
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasBoundary()
+    public function hasBoundary(): bool
     {
-        return (null !== $this->boundary);
+        return ($this->boundary !== null);
     }
 
     /**
@@ -372,7 +377,7 @@ class Part
      *
      * @return string
      */
-    public function generateBoundary()
+    public function generateBoundary(): string
     {
         $this->setBoundary(sha1(uniqid()));
         return $this->boundary;
@@ -381,9 +386,9 @@ class Part
     /**
      * Has attachment (check via a header)
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasAttachment()
+    public function hasAttachment(): bool
     {
         $result = false;
 
@@ -404,9 +409,9 @@ class Part
     /**
      * Does message have attachments (check via parts)
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasAttachments()
+    public function hasAttachments(): bool
     {
         foreach ($this->parts as $part) {
             if ($part->hasAttachment()) {
@@ -421,7 +426,7 @@ class Part
      *
      * @return array
      */
-    public function getAttachments()
+    public function getAttachments(): array
     {
         $attachments = [];
 
@@ -439,7 +444,7 @@ class Part
      *
      * @return string
      */
-    public function getContentType()
+    public function getContentType(): string
     {
         $contentType = null;
 
@@ -453,9 +458,9 @@ class Part
     /**
      * Get attachment filename
      *
-     * @return string
+     * @return string|null
      */
-    public function getFilename()
+    public function getFilename(): string|null
     {
         $filename = null;
 
@@ -471,7 +476,7 @@ class Part
             }
 
             // Else, check Content-Type header (non-standard)
-            if (null === $filename) {
+            if ($filename === null) {
                 if ($this->hasHeader('Content-Type') && (count($this->getHeader('Content-Type')->getValues()) == 1)) {
                     $header = $this->getHeader('Content-Type');
                     if ($header->getValue(0)->hasParameter('filename')) {
@@ -483,7 +488,7 @@ class Part
             }
 
             // Else, check Content-Description header (non-standard)
-            if (null === $filename) {
+            if ($filename === null) {
                 if ($this->hasHeader('Content-Description') && (count($this->getHeader('Content-Description')->getValues()) == 1)) {
                     $header = $this->getHeader('Content-Description');
                     if ($header->getValue(0)->hasParameter('filename')) {
@@ -496,9 +501,9 @@ class Part
         }
 
         // Decode filename, if encoded
-        if ((null !== $filename) && (function_exists('imap_mime_header_decode')) &&
-            ((strpos($filename, 'UTF') !== false) || (strpos($filename, 'ISO') !== false) ||
-                (strpos($filename, '?') !== false) || (strpos($filename, '=') !== false))) {
+        if (($filename !== null) && (function_exists('imap_mime_header_decode')) &&
+            ((str_contains($filename, 'UTF')) || (str_contains($filename, 'ISO')) ||
+                (str_contains($filename, '?')) || (str_contains($filename, '=')))) {
             $filenameAry = imap_mime_header_decode($filename);
             if (isset($filenameAry[0]) && isset($filenameAry[0]->text)) {
                 $filename = $filenameAry[0]->text;
@@ -513,7 +518,7 @@ class Part
      *
      * @return mixed
      */
-    public function getContents()
+    public function getContents(): mixed
     {
         $content = $this->body->getContent();
 
@@ -537,7 +542,7 @@ class Part
      *
      * @return string
      */
-    public function renderHeaders()
+    public function renderHeaders(): string
     {
         return implode("\r\n", $this->headers) . "\r\n\r\n";
     }
@@ -545,10 +550,10 @@ class Part
     /**
      * Render the parts
      *
-     * @param  boolean $preamble
+     * @param  bool $preamble
      * @return string
      */
-    public function renderParts($preamble = true)
+    public function renderParts(bool $preamble = true): string
     {
         $parts = '';
 
@@ -578,7 +583,7 @@ class Part
      *
      * @return string
      */
-    public function renderBody()
+    public function renderBody(): string
     {
         return $this->body->render();
     }
@@ -586,10 +591,10 @@ class Part
     /**
      * Render the part
      *
-     * @param  boolean $preamble
+     * @param  bool $preamble
      * @return string
      */
-    public function render($preamble = true)
+    public function render(bool $preamble = true): string
     {
         $messagePart = '';
 
@@ -620,7 +625,7 @@ class Part
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->render();
     }

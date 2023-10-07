@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,36 +19,36 @@ namespace Pop\Mime\Part;
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    1.2.0
+ * @version    2.0.0
  */
 class Header
 {
 
     /**
      * Header name
-     * @var string
+     * @var ?string
      */
-    protected $name = null;
+    protected ?string$name = null;
 
     /**
      * Header values
      * @var array
      */
-    protected $values = [];
+    protected array $values = [];
 
     /**
      * Header wrap
      * @var int
      */
-    protected $wrap = 0;
+    protected int $wrap = 0;
 
     /**
      * Header wrap indent
      * @var string
      */
-    protected $indent = "\t";
+    protected string $indent = "\t";
 
     /**
      * Constructor
@@ -58,11 +58,11 @@ class Header
      * @param string $name
      * @param mixed  $value
      */
-    public function __construct($name, $value = null)
+    public function __construct(string $name, mixed $value = null)
     {
         $this->setName($name);
 
-        if (null !== $value) {
+        if ($value !== null) {
             if (is_array($value)) {
                 $this->addValues($value);
             } else {
@@ -77,7 +77,7 @@ class Header
      * @param  string $header
      * @return Header
      */
-    public static function parse($header)
+    public static function parse(string $header): Header
     {
         $name = trim(substr($header, 0, strpos($header, ':')));
 
@@ -104,7 +104,7 @@ class Header
      * @param  string $name
      * @return Header
      */
-    public function setName($name)
+    public function setName(string $name): Header
     {
         $this->name = $name;
         return $this;
@@ -115,7 +115,7 @@ class Header
      *
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -126,7 +126,7 @@ class Header
      * @param  array $values
      * @return Header
      */
-    public function addValues(array $values)
+    public function addValues(array $values): Header
     {
         foreach ($values as $value) {
             $this->addValue($value);
@@ -138,12 +138,12 @@ class Header
     /**
      * Add a header value
      *
-     * @param  string $value
-     * @param  string $scheme
-     * @param  array  $parameters
+     * @param  Header\Value|string $value
+     * @param  ?string             $scheme
+     * @param  array               $parameters
      * @return Header
      */
-    public function addValue($value, $scheme = null, array $parameters = [])
+    public function addValue(Header\Value|string $value, ?string $scheme = null, array $parameters = []): Header
     {
         if (is_string($value)) {
             $value = new Header\Value($value, $scheme, $parameters);
@@ -157,7 +157,7 @@ class Header
      *
      * @return array
      */
-    public function getValues()
+    public function getValues(): array
     {
         return $this->values;
     }
@@ -168,9 +168,9 @@ class Header
      * @param  int $i
      * @return Header\Value|null
      */
-    public function getValue($i = 0)
+    public function getValue(int $i = 0): Header\Value|null
     {
-        return (isset($this->values[$i])) ? $this->values[$i] : null;
+        return $this->values[$i] ?? null;
     }
 
     /**
@@ -179,18 +179,18 @@ class Header
      * @param  int $i
      * @return string|null
      */
-    public function getValueAsString($i = 0)
+    public function getValueAsString(int $i = 0): string|null
     {
-        return (isset($this->values[$i])) ? (string)$this->values[$i] : null;
+        return (string)$this->values[$i] ?? null;
     }
 
     /**
      * Get index of header value
      *
      * @param  string $value
-     * @return boolean
+     * @return bool
      */
-    public function getValueIndex($value)
+    public function getValueIndex(string $value): bool
     {
         $result = null;
 
@@ -208,9 +208,9 @@ class Header
      * Determine if the header has a value at index
      *
      * @param  int $i
-     * @return boolean
+     * @return bool
      */
-    public function hasValueAtIndex($i)
+    public function hasValueAtIndex(int $i): bool
     {
         return (isset($this->values[$i]));
     }
@@ -219,9 +219,9 @@ class Header
      * Determine if the header has a value
      *
      * @param  string $value
-     * @return boolean
+     * @return bool
      */
-    public function hasValue($value)
+    public function hasValue(string $value): bool
     {
         $result = false;
 
@@ -238,10 +238,10 @@ class Header
     /**
      * Get the header values as strings
      *
-     * @param  string $delimiter
+     * @param  ?string $delimiter
      * @return string|array
      */
-    public function getValuesAsStrings($delimiter = null)
+    public function getValuesAsStrings(?string $delimiter = null): string|array
     {
         if (count($this->values) == 1) {
             return (string)$this->values[0];
@@ -251,7 +251,7 @@ class Header
                 $values[] = (string)$value;
             }
 
-            return (null !== $delimiter) ? implode($delimiter, $values) : $values;
+            return ($delimiter !== null) ? implode($delimiter, $values) : $values;
         }
     }
 
@@ -261,7 +261,7 @@ class Header
      * @param  int $wrap
      * @return Header
      */
-    public function setWrap($wrap)
+    public function setWrap(int $wrap): Header
     {
         $this->wrap = (int)$wrap;
         return $this;
@@ -272,7 +272,7 @@ class Header
      *
      * @return int
      */
-    public function getWrap()
+    public function getWrap(): int
     {
         return $this->wrap;
     }
@@ -280,11 +280,11 @@ class Header
     /**
      * Has header wrap
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasWrap()
+    public function hasWrap(): bool
     {
-        return (null !== $this->wrap);
+        return ($this->wrap !== null);
     }
 
     /**
@@ -293,7 +293,7 @@ class Header
      * @param  string $indent
      * @return Header
      */
-    public function setIndent($indent)
+    public function setIndent(string $indent): Header
     {
         $this->indent = $indent;
         return $this;
@@ -304,7 +304,7 @@ class Header
      *
      * @return string
      */
-    public function getIndent()
+    public function getIndent(): string
     {
         return $this->indent;
     }
@@ -312,19 +312,19 @@ class Header
     /**
      * Has header wrap indent
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasIndent()
+    public function hasIndent(): bool
     {
-        return (null !== $this->indent);
+        return ($this->indent !== null);
     }
 
     /**
      * Is the header for an attachment
      *
-     * @return boolean
+     * @return bool
      */
-    public function isAttachment()
+    public function isAttachment(): bool
     {
         $result = false;
 
@@ -344,7 +344,7 @@ class Header
      *
      * @return string
      */
-    public function render()
+    public function render(): string
     {
         $headers = [];
 
@@ -365,7 +365,7 @@ class Header
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->render();
     }

@@ -34,7 +34,7 @@ class HeaderValueTest extends TestCase
 
     public function testParameterException()
     {
-        $this->expectException('Pop\Mime\Part\Header\Exception');
+        $this->expectException('TypeError');
         $headerValue = new Value();
         $headerValue->setDelimiter(null);
         $params = $headerValue->getParametersAsString();

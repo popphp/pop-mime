@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,52 +19,52 @@ namespace Pop\Mime\Part\Header;
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    1.2.0
+ * @version    2.0.0
  */
 class Value
 {
 
     /**
      * Header value scheme
-     * @var string
+     * @var ?string
      */
-    protected $scheme = null;
+    protected ?string $scheme = null;
 
     /**
      * Header value
-     * @var string
+     * @var ?string
      */
-    protected $value = null;
+    protected ?string $value = null;
 
     /**
      * Header value parameters
      * @var array
      */
-    protected $parameters = [];
+    protected array $parameters = [];
 
     /**
      * Header value delimiter
      * @var string
      */
-    protected $delimiter = ';';
+    protected string $delimiter = ';';
 
     /**
      * Constructor
      *
      * Instantiate the header value object
      *
-     * @param string $value
-     * @param string $scheme
-     * @param array  $parameters
+     * @param ?string $value
+     * @param ?string $scheme
+     * @param array   $parameters
      */
-    public function __construct($value = null, $scheme = null, array $parameters = [])
+    public function __construct(?string $value = null, ?string $scheme = null, array $parameters = [])
     {
-        if (null !== $value) {
+        if ($value !== null) {
             $this->setValue($value);
         }
-        if (null !== $scheme) {
+        if ($scheme !== null) {
             $this->setScheme($scheme);
         }
         if (!empty($parameters)) {
@@ -78,13 +78,13 @@ class Value
      * @param  string $value
      * @return Value
      */
-    public static function parse($value)
+    public static function parse(string $value): Value
     {
         $valueObject = new Value();
         $parameters  = [];
 
-        if ((strpos($value, ';') !== false) || (strpos($value, ',') !== false)) {
-            $delimiter = (strpos($value, ';') !== false) ? ';' : ',';
+        if ((str_contains($value, ';')) || (str_contains($value, ','))) {
+            $delimiter = (str_contains($value, ';')) ? ';' : ',';
             $valueObject->setDelimiter($delimiter);
 
             $matches = [];
@@ -93,7 +93,7 @@ class Value
                 $val = trim(str_replace($delimiter, '', substr($value, 0, $matches[0][0][1])));
 
                 if ((stripos($val, 'Basic') !== false) || (stripos($val, 'Bearer') !== false) || (stripos($val, 'Digest') !== false)) {
-                    if (strpos($val, ' ') !== false) {
+                    if (str_contains($val, ' ')) {
                         $valueObject->setScheme(substr($val, 0, strpos($val, ' ')) . ' ');
                         $valueObject->setValue(substr($val, (strpos($val, ' ') + 1)));
                     } else {
@@ -108,7 +108,7 @@ class Value
                 $value  = trim(substr($value, $matches[0][0][1]));
                 $params = array_map('trim', explode($delimiter, $value));
                 foreach ($params as $param) {
-                    if (strpos($param, '=') !== false) {
+                    if (str_contains($param, '=')) {
                         [$paramName, $paramValue] = self::parseParameter($param);
                         $parameters[$paramName] = $paramValue;
                     }
@@ -123,7 +123,6 @@ class Value
         }
 
         return $valueObject;
-
     }
 
     /**
@@ -132,11 +131,11 @@ class Value
      * @param  string $parameter
      * @return array
      */
-    public static function parseParameter($parameter)
+    public static function parseParameter(string $parameter): array
     {
         $paramName  = substr($parameter, 0, strpos($parameter, '='));
         $paramValue = substr($parameter, (strpos($parameter, '=')+ 1));
-        if ((substr($paramValue, 0, 1) == '"') && (substr($paramValue, -1) == '"')) {
+        if ((str_starts_with($paramValue, '"')) && (str_ends_with($paramValue, '"'))) {
             $paramValue = substr($paramValue, 1);
             $paramValue = substr($paramValue, 0, -1);
         }
@@ -149,7 +148,7 @@ class Value
      * @param  string $scheme
      * @return Value
      */
-    public function setScheme($scheme)
+    public function setScheme(string $scheme): Value
     {
         $this->scheme = $scheme;
         return $this;
@@ -160,7 +159,7 @@ class Value
      *
      * @return string
      */
-    public function getScheme()
+    public function getScheme(): string
     {
         return $this->scheme;
     }
@@ -168,11 +167,11 @@ class Value
     /**
      * Has a header value scheme
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasScheme()
+    public function hasScheme(): bool
     {
-        return (null !== $this->delimiter);
+        return ($this->delimiter !== null);
     }
 
     /**
@@ -181,7 +180,7 @@ class Value
      * @param  string $value
      * @return Value
      */
-    public function setValue($value)
+    public function setValue(string $value): Value
     {
         $this->value = $value;
         return $this;
@@ -192,7 +191,7 @@ class Value
      *
      * @return string
      */
-    public function getValue()
+    public function getValue(): string
     {
         return $this->value;
     }
@@ -203,7 +202,7 @@ class Value
      * @param  array $parameters
      * @return Value
      */
-    public function addParameters(array $parameters)
+    public function addParameters(array $parameters): Value
     {
         $this->parameters = $parameters;
         return $this;
@@ -216,7 +215,7 @@ class Value
      * @param string $value
      * @return Value
      */
-    public function addParameter($name, $value)
+    public function addParameter(string $name, string $value): Value
     {
         $this->parameters[$name] = $value;
         return $this;
@@ -227,7 +226,7 @@ class Value
      *
      * @return array
      */
-    public function getParameters()
+    public function getParameters(): array
     {
         return $this->parameters;
     }
@@ -238,7 +237,7 @@ class Value
      * @throws Exception
      * @return string
      */
-    public function getParametersAsString()
+    public function getParametersAsString(): string
     {
         if (!$this->hasDelimiter()) {
             throw new Exception('Error: No delimiter has been set.');
@@ -247,7 +246,7 @@ class Value
         $parameters = [];
 
         foreach ($this->parameters as $name => $value) {
-            if ((strpos($value, ' ') !== false) && (strpos($value, '"') === false)) {
+            if ((str_contains($value, ' ')) && (!str_contains($value, '"'))) {
                 $value = '"' . $value . '"';
             }
             $parameters[] = $name . '=' . $value;
@@ -260,19 +259,19 @@ class Value
      * Get a header value parameter
      *
      * @param  string $name
-     * @return string
+     * @return string|null
      */
-    public function getParameter($name)
+    public function getParameter(string $name): string|null
     {
-        return (isset($this->parameters[$name])) ? $this->parameters[$name] : null;
+        return $this->parameters[$name] ?? null;
     }
 
     /**
      * Has header value parameters
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasParameters()
+    public function hasParameters(): bool
     {
         return (count($this->parameters) > 0);
     }
@@ -281,9 +280,9 @@ class Value
      * Has a header value parameter
      *
      * @param  string $name
-     * @return boolean
+     * @return bool
      */
-    public function hasParameter($name)
+    public function hasParameter(string $name): bool
     {
         return (isset($this->parameters[$name]));
     }
@@ -294,7 +293,7 @@ class Value
      * @param  string $delimiter
      * @return Value
      */
-    public function setDelimiter($delimiter)
+    public function setDelimiter(string $delimiter): Value
     {
         $this->delimiter = $delimiter;
         return $this;
@@ -305,7 +304,7 @@ class Value
      *
      * @return string
      */
-    public function getDelimiter()
+    public function getDelimiter(): string
     {
         return $this->delimiter;
     }
@@ -313,25 +312,26 @@ class Value
     /**
      * Has a header value delimiter
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasDelimiter()
+    public function hasDelimiter(): bool
     {
-        return (null !== $this->delimiter);
+        return ($this->delimiter !== null);
     }
 
     /**
      * Render the header value string
      *
+     * @throws Exception
      * @return string
      */
-    public function render()
+    public function render(): string
     {
         $value = $this->scheme . $this->value;
 
         if (count($this->parameters) > 0) {
             $parameters = $this->getParametersAsString();
-            if (substr($value, -1) != ' ') {
+            if (!str_ends_with($value, ' ')) {
                 $value .= $this->delimiter . ' ';
             }
             $value .= $parameters;
@@ -345,7 +345,7 @@ class Value
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->render();
     }

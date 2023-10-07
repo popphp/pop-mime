@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -22,9 +22,9 @@ use Pop\Mime\Part\Body;
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    1.2.0
+ * @version    2.0.0
  */
 class Message extends Part
 {
@@ -35,7 +35,7 @@ class Message extends Part
      * @param  string $messageString
      * @return Message
      */
-    public static function parseMessage($messageString)
+    public static function parseMessage(string $messageString): Message
     {
         $headerString = substr($messageString, 0, strpos($messageString, "\r\n\r\n"));
         $bodyString   = substr($messageString, (strpos($messageString, "\r\n\r\n") + 4));
@@ -77,7 +77,7 @@ class Message extends Part
      * @param  string $formString
      * @return array
      */
-    public static function parseForm($formString)
+    public static function parseForm(string $formString): array
     {
         $form     = self::parseMessage($formString);
         $formData = [];
@@ -90,14 +90,14 @@ class Message extends Part
                     $contents = $part->getContents();
                     $filename = ($disposition->getValue(0)->hasParameter('filename')) ? $disposition->getValue(0)->getParameter('filename') : null;
 
-                    if (substr($name, -2) == '[]') {
+                    if (str_ends_with($name, '[]')) {
                         $name = substr($name, 0, -2);
                         if (!isset($formData[$name])) {
                             $formData[$name] = [];
                         }
                         $formData[$name][] = $contents;
                     } else {
-                        if (null !== $filename) {
+                        if ($filename !== null) {
                             $formData[$name] = [
                                 'filename' => $filename,
                                 'contents' => $contents
@@ -116,10 +116,10 @@ class Message extends Part
     /**
      * Create multipart form object
      *
-     * @param  array  $fields
+     * @param  array $fields
      * @return Message
      */
-    public static function createForm($fields = [])
+    public static function createForm(array $fields = []): Message
     {
         $message = new self();
         $header  = new Header('Content-Type', new Header\Value('multipart/form-data', null, ['boundary' => $message->generateBoundary()]));
@@ -152,7 +152,7 @@ class Message extends Part
                         }
 
                         $fieldPart = new Part(new Header('Content-Disposition', new Header\Value('form-data', null, $parameters)));
-                        if (null !== $contentType) {
+                        if ($contentType !== null) {
                             $fieldPart->addHeader('Content-Type', $contentType);
                         }
                         $fieldPart->setBody(new Body($fileContents));
@@ -183,7 +183,7 @@ class Message extends Part
      * @param  string $headerString
      * @return array
      */
-    public static function parseHeaders($headerString)
+    public static function parseHeaders(string $headerString): array
     {
         $headers = [];
         $matches = [];
@@ -211,13 +211,13 @@ class Message extends Part
     /**
      * Parse message body string
      *
-     * @param  string $bodyString
-     * @param  string $boundary
+     * @param  string  $bodyString
+     * @param  ?string $boundary
      * @return array
      */
-    public static function parseBody($bodyString, $boundary = null)
+    public static function parseBody(string $bodyString, ?string $boundary = null): array
     {
-        if (strpos($bodyString, '--' . $boundary) !== false) {
+        if (str_contains($bodyString, '--' . $boundary)) {
             $parts = explode('--' . $boundary, $bodyString);
             if ((strpos($bodyString, '--' . $boundary) > 0) && isset($parts[0])) {
                 unset($parts[0]);
@@ -226,11 +226,9 @@ class Message extends Part
             $parts = [$bodyString];
         }
 
-        $parts = array_values(array_filter(array_map('trim', $parts), function ($value) {
+        return array_values(array_filter(array_map('trim', $parts), function ($value) {
             return (!empty($value) && ($value != '--'));
         }));
-
-        return $parts;
     }
 
     /**
@@ -239,11 +237,11 @@ class Message extends Part
      * @param  string $partString
      * @return Part|array
      */
-    public static function parsePart($partString)
+    public static function parsePart(string $partString): Part|array
     {
         $headers = [];
 
-        if (strpos($partString, "\r\n\r\n") !== false) {
+        if (str_contains($partString, "\r\n\r\n")) {
             $headerString = substr($partString, 0, strpos($partString, "\r\n\r\n"));
             $bodyString   = trim(substr($partString, (strpos($partString, "\r\n\r\n") + 4)));
             $headers      = self::parseHeaders($headerString);
@@ -268,7 +266,7 @@ class Message extends Part
         }
 
         if (!empty($bodyString)) {
-            if (null !== $boundary) {
+            if ($boundary !== null) {
                 $subPartStrings = self::parseBody($bodyString, $boundary);
                 $subParts       = [];
 
@@ -293,7 +291,7 @@ class Message extends Part
                     $encoding = Body::RAW_URL;
                 }
                 $body = new Body($bodyString, $encoding);
-                if (null !== $encoding) {
+                if ($encoding !== null) {
                     $body->setAsEncoded(true);
                 }
                 if ($isFile) {

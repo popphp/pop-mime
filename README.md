@@ -20,6 +20,13 @@ Install `pop-mime` using Composer.
 
     composer require popphp/pop-mime
 
+Or, require it in your composer.json file
+
+    "require": {
+        "popphp/pop-mime" : "2.0.*"
+    }
+
+
 BASIC USAGE
 -----------
 
