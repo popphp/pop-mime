@@ -51,6 +51,12 @@ class Value
     protected string $delimiter = ';';
 
     /**
+     * Force quotes for parameter values
+     * @var bool
+     */
+    protected bool $forceQuote = false;
+
+    /**
      * Constructor
      *
      * Instantiate the header value object
@@ -58,8 +64,9 @@ class Value
      * @param ?string $value
      * @param ?string $scheme
      * @param array   $parameters
+     * @param bool    $forceQuote
      */
-    public function __construct(?string $value = null, ?string $scheme = null, array $parameters = [])
+    public function __construct(?string $value = null, ?string $scheme = null, array $parameters = [], bool $forceQuote = false)
     {
         if ($value !== null) {
             $this->setValue($value);
@@ -69,6 +76,9 @@ class Value
         }
         if (!empty($parameters)) {
             $this->addParameters($parameters);
+        }
+        if ($forceQuote) {
+            $this->setForceQuote($forceQuote);
         }
     }
 
@@ -246,7 +256,7 @@ class Value
         $parameters = [];
 
         foreach ($this->parameters as $name => $value) {
-            if ((str_contains($value, ' ')) && (!str_contains($value, '"'))) {
+            if (!str_contains($value, '"') && (str_contains($value, ' ') || ($this->forceQuote))) {
                 $value = '"' . $value . '"';
             }
             $parameters[] = $name . '=' . $value;
@@ -317,6 +327,28 @@ class Value
     public function hasDelimiter(): bool
     {
         return ($this->delimiter !== null);
+    }
+
+    /**
+     * Set the header value delimiter
+     *
+     * @param  bool $forceQuote
+     * @return Value
+     */
+    public function setForceQuote(bool $forceQuote = false): Value
+    {
+        $this->forceQuote = $forceQuote;
+        return $this;
+    }
+
+    /**
+     * Is set to force quote
+     *
+     * @return bool
+     */
+    public function isForceQuote(): bool
+    {
+        return $this->forceQuote;
     }
 
     /**

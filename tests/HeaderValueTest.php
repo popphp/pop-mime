@@ -18,9 +18,9 @@ class HeaderValueTest extends TestCase
 
     public function testHasParameters()
     {
-        $headerValue = new Value('test', null, ['foo' => 'bar']);
+        $headerValue = new Value('test', null, ['foo' => 'bar'], true);
         $this->assertTrue($headerValue->hasParameters());
-
+        $this->assertTrue($headerValue->isForceQuote());
         $this->assertEquals('bar', $headerValue->getParameters()['foo']);
     }
 
