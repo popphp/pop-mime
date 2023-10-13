@@ -94,14 +94,13 @@ class Value
         $parameters  = [];
 
         if ((str_contains($value, ';')) || (str_contains($value, ','))) {
-            $delimiter = (str_contains($value, ';')) ? ';' : ',';
-            $valueObject->setDelimiter($delimiter);
-
             $matches = [];
             preg_match_all('/\w+=[\\a-zA-Z0-9_\s\.\"\/]/mi', $value, $matches, PREG_OFFSET_CAPTURE);
             if (isset($matches[0]) && isset($matches[0][0]) && isset($matches[0][0][1])) {
-                $val = trim(str_replace($delimiter, '', substr($value, 0, $matches[0][0][1])));
-
+                $val = trim(substr($value, 0, $matches[0][0][1]));
+                if (str_ends_with($val, ';') || str_ends_with($val, ',')) {
+                    $val = substr($val, 0, -1);
+                }
                 if ((stripos($val, 'Basic') !== false) || (stripos($val, 'Bearer') !== false) || (stripos($val, 'Digest') !== false)) {
                     if (str_contains($val, ' ')) {
                         $valueObject->setScheme(substr($val, 0, strpos($val, ' ')) . ' ');
@@ -109,18 +108,26 @@ class Value
                     } else {
                         $valueObject->setScheme($val . ' ');
                     }
-
-
                 } else {
                     $valueObject->setValue($val);
                 }
 
-                $value  = trim(substr($value, $matches[0][0][1]));
-                $params = array_map('trim', explode($delimiter, $value));
-                foreach ($params as $param) {
-                    if (str_contains($param, '=')) {
-                        [$paramName, $paramValue] = self::parseParameter($param);
-                        $parameters[$paramName] = $paramValue;
+                $params       = trim(substr($value, $matches[0][0][1]));
+                $paramValues  = [];
+                $paramMatches = [];
+                preg_match_all('/\w+=/mi', $params, $paramMatches, PREG_OFFSET_CAPTURE);
+                foreach ($paramMatches[0] as $i => $paramMatch) {
+                    if (isset($paramMatches[0][$i + 1])) {
+                        $paramValues[] = trim(substr($params, $paramMatch[1], $paramMatches[0][$i + 1][1] - $paramMatch[1]));
+                    } else {
+                        $paramValues[] = trim(substr($params, $paramMatch[1]));
+                    }
+                }
+                foreach ($paramValues as $pValue) {
+                    [$paramName, $paramValue, $delimiter] = self::parseParameter($pValue);
+                    $parameters[$paramName]  = $paramValue;
+                    if ($delimiter !== null) {
+                        $valueObject->setDelimiter($delimiter);
                     }
                 }
             }
@@ -144,12 +151,17 @@ class Value
     public static function parseParameter(string $parameter): array
     {
         $paramName  = substr($parameter, 0, strpos($parameter, '='));
-        $paramValue = substr($parameter, (strpos($parameter, '=')+ 1));
+        $paramValue = substr($parameter, (strpos($parameter, '=') + 1));
+        $delimiter  = null;
+        if (str_ends_with($paramValue, ';') || str_ends_with($paramValue, ',')) {
+            $delimiter = (str_ends_with($paramValue, ';')) ? ';' : ',';
+            $paramValue = substr($paramValue, 0, -1);
+        }
         if ((str_starts_with($paramValue, '"')) && (str_ends_with($paramValue, '"'))) {
             $paramValue = substr($paramValue, 1);
             $paramValue = substr($paramValue, 0, -1);
         }
-        return [$paramName, $paramValue];
+        return [$paramName, $paramValue, $delimiter];
     }
 
     /**
