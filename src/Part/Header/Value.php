@@ -179,9 +179,9 @@ class Value
     /**
      * Get the header value scheme
      *
-     * @return string
+     * @return string|null
      */
-    public function getScheme(): string
+    public function getScheme(): string|null
     {
         return $this->scheme;
     }
@@ -211,9 +211,9 @@ class Value
     /**
      * Get the header value
      *
-     * @return string
+     * @return string|null
      */
-    public function getValue(): string
+    public function getValue(): string|null
     {
         return $this->value;
     }
