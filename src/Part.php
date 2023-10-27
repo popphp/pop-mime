@@ -607,10 +607,6 @@ class Part
                     $encoding = 'base64';
                 } else if ($this->body->isQuotedEncoding()) {
                     $encoding = 'quoted-printable';
-                } else if (($this->body->isUrlEncoding()) || ($this->body->isRawUrlEncoding())) {
-                    $encoding = 'application/x-www-form-urlencoded';
-                } else if ($this->body->isFile()) {
-                    $encoding = 'binary';
                 }
                 if ($encoding !== null) {
                     $this->addHeader(new Part\Header('Content-Transfer-Encoding', $encoding));
