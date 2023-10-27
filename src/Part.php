@@ -601,15 +601,20 @@ class Part
         if ($this->hasParts()) {
             $messagePart .= $this->renderParts($preamble);
         } else if ($this->hasBody()) {
-            if (($this->body->isFile()) && (!$this->hasHeader('Content-Transfer-Encoding'))) {
-                $encoding = ($this->body->isBase64Encoding()) ? 'base64' : 'binary';
-                $this->addHeader(
-                    new Part\Header('Content-Transfer-Encoding', $encoding)
-                );
-            } else if ((!$this->hasHeader('Content-Transfer-Encoding')) && $this->body->isQuotedEncoding()) {
-                $this->addHeader(
-                    new Part\Header('Content-Transfer-Encoding', 'quoted-printable')
-                );
+            if ((!$this->hasHeader('Content-Transfer-Encoding')) && ($this->body->hasEncoding())) {
+                $encoding = null;
+                if ($this->body->isBase64Encoding()) {
+                    $encoding = 'base64';
+                } else if ($this->body->isQuotedEncoding()) {
+                    $encoding = 'quoted-printable';
+                } else if (($this->body->isUrlEncoding()) || ($this->body->isRawUrlEncoding())) {
+                    $encoding = 'application/x-www-form-urlencoded';
+                } else if ($this->body->isFile()) {
+                    $encoding = 'binary';
+                }
+                if ($encoding !== null) {
+                    $this->addHeader(new Part\Header('Content-Transfer-Encoding', $encoding));
+                }
             }
             if ($this->hasHeaders()) {
                 $messagePart .= $this->renderHeaders();
