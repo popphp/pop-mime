@@ -129,6 +129,8 @@ This is the text message.
 --f79f7366a24132e15132142b0a830a9cac98010f--
 ```
 
+[Top](#pop-mime)
+
 ### Attachments
 
 Part objects can be file attachments as well.
@@ -214,6 +216,8 @@ echo $header;
 Content-Type: text/html
 ```
 
+[Top](#pop-mime)
+
 #### Header Values
 
 Header values can be passed into a header object as strings, but they will become header value
@@ -279,6 +283,8 @@ echo $header;
 ```text
 Authorization: Digest username="my_username", realm="my_realm", nonce="my-nonce-123456", uri="/my-uri", response="my-response-123456"
 ```
+
+[Top](#pop-mime)
 
 #### Multiple Header Values
 
