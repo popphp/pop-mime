@@ -11,7 +11,7 @@ pop-mime
 * [Install](#install)
 * [Quickstart](#quickstart)
 * [Parts](#parts)
-  -[Attachments](#attachments)
+  - [Attachments](#attachments)
 * [Headers](#headers)
   - [Header Values](#header-values)
   - [Multiple Header Values](#multiple-header-values)
