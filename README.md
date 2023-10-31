@@ -284,6 +284,12 @@ echo $header;
 Authorization: Digest username="my_username", realm="my_realm", nonce="my-nonce-123456", uri="/my-uri", response="my-response-123456"
 ```
 
+You can always get the header value as a string:
+
+```php
+$headerString = $header->getValueAsString();
+```
+
 [Top](#pop-mime)
 
 #### Multiple Header Values
@@ -308,6 +314,12 @@ echo $header;
 X-Multi-Header: value-1
 X-Multi-Header: value-2
 X-Multi-Header: value-3
+```
+
+You can access each header value by index:
+
+```php
+$value = $header->getValue(2);
 ```
 
 [Top](#pop-mime)
