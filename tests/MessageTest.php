@@ -76,7 +76,7 @@ class MessageTest extends TestCase
         $this->assertEquals('Green', $formData['colors'][1]);
     }
 
-    public function testCreateForm()
+    public function testCreateForm1()
     {
         $formData = [
             'username' => 'admin@test/whatever%DUDE!',
@@ -92,6 +92,34 @@ class MessageTest extends TestCase
         $contents    = $formMessage->render(false);
 
         $this->assertStringContainsString('Content-Type: multipart/form-data; boundary=', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=username', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=password', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=colors[]', $contents);
+        $this->assertStringContainsString('Content-Disposition: form-data; name=file; filename=test.pdf', $contents);
+        $this->assertStringContainsString('Content-Type: application/pdf', $contents);
+        $this->assertStringContainsString('admin%40test%2Fwhatever%25DUDE%21', $contents);
+        $this->assertStringContainsString('123456', $contents);
+        $this->assertStringContainsString('Red', $contents);
+        $this->assertStringContainsString('Green', $contents);
+        $this->assertStringContainsString('%PDF-1.4', $contents);
+    }
+
+    public function testCreateForm2()
+    {
+        $formData = [
+            'username' => 'admin@test/whatever%DUDE!',
+            'password' => '123456',
+            'colors'   => ['Red', 'Green'],
+            'file'     => [
+                'filename'    => __DIR__ . '/tmp/test.pdf',
+                'contentType' => 'application/pdf'
+            ]
+        ];
+
+        $formMessage = Message::createForm($formData);
+        $contents    = $formMessage->renderRaw();
+
+        $this->assertStringNotContainsString('Content-Type: multipart/form-data; boundary=', $contents);
         $this->assertStringContainsString('Content-Disposition: form-data; name=username', $contents);
         $this->assertStringContainsString('Content-Disposition: form-data; name=password', $contents);
         $this->assertStringContainsString('Content-Disposition: form-data; name=colors[]', $contents);

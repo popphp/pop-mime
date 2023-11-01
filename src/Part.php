@@ -551,9 +551,10 @@ class Part
      * Render the parts
      *
      * @param  bool $preamble
+     * @param  bool $headers
      * @return string
      */
-    public function renderParts(bool $preamble = true): string
+    public function renderParts(bool $preamble = true, bool $headers = true): string
     {
         $parts = '';
 
@@ -563,7 +564,7 @@ class Part
                 new Part\Header('Content-Type', new Part\Header\Value('multipart/' . $this->subType, null, ['boundary' =>  $boundary]))
             );
         }
-        if ($this->hasHeaders()) {
+        if (($headers) && ($this->hasHeaders())) {
             $parts .= $this->renderHeaders();
         }
         if ($preamble) {
@@ -619,6 +620,17 @@ class Part
         }
 
         return $messagePart;
+    }
+
+
+    /**
+     * Render the part raw (no headers or preamble)
+     *
+     * @return string
+     */
+    public function renderRaw(): string
+    {
+        return $this->renderParts(false, false);
     }
 
     /**

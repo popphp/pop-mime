@@ -381,10 +381,7 @@ $formData = [
 ];
 
 $formMessage = Message::createForm($formData);
-$header      = $formMessage->getHeader('Content-Type');
-$formMessage->removeHeader('Content-Type');
-
-echo $formMessage->render(false); // Remove the preamble
+echo $formMessage->renderRaw();
 ```
 
 And that will render just the form data content, removing the top-level header
