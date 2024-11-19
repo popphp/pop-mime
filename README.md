@@ -4,7 +4,6 @@ pop-mime
 [![Build Status](https://github.com/popphp/pop-mime/workflows/phpunit/badge.svg)](https://github.com/popphp/pop-mime/actions)
 [![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-mime)](http://cc.popphp.org/pop-queue/)
 
-[![Join the chat at https://popphp.slack.com](https://media.popphp.org/img/slack.svg)](https://popphp.slack.com)
 [![Join the chat at https://discord.gg/TZjgT74U7E](https://media.popphp.org/img/discord.svg)](https://discord.gg/TZjgT74U7E)
 
 * [Overview](#overview)
@@ -25,7 +24,7 @@ generate properly-formatted MIME messages with all their related headers and par
 MIME messages into their respective objects and work with them from there. This can be utilized with mail and HTTP
 components, such as `pop-mail` and `pop-http`. 
 
-`pop-mime` is a component of the [Pop PHP Framework](http://www.popphp.org/).
+`pop-mime` is a component of the [Pop PHP Framework](https://www.popphp.org/).
 
 Install
 -------
