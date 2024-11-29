@@ -36,7 +36,7 @@ Install `pop-mime` using Composer.
 Or, require it in your composer.json file
 
     "require": {
-        "popphp/pop-mime" : "^2.0.0"
+        "popphp/pop-mime" : "^2.0.1"
     }
 
 [Top](#pop-mime)
