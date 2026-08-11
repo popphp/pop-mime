@@ -103,4 +103,116 @@ class HeaderTest extends TestCase
         $this->assertTrue(is_string($header->getValueAsString()));
     }
 
+    public function testParseFilenameWithSemicolonInsideQuotes()
+    {
+        $header = Header::parse('Content-Disposition: attachment; filename="invoice; final.pdf"');
+        $this->assertEquals('invoice; final.pdf', $header->getValue(0)->getParameter('filename'));
+    }
+
+    public function testParseNotFooledByRepeatedNameWithinASingleLineValue()
+    {
+        $header = Header::parse('X-Note: value mentions X-Note: again in the text');
+        $this->assertEquals(1, count($header->getValues()));
+        $this->assertEquals('value mentions X-Note: again in the text', $header->getValueAsString());
+    }
+
+    public function testFoldNeverBreaksInsideAQuotedStringValue()
+    {
+        $headerValue = new Header\Value('attachment', null, [
+            'filename' => 'a very long descriptive file name that needs quoting.pdf'
+        ]);
+        $header = new Header('Content-Disposition', $headerValue);
+        $header->setWrap(40)->setIndent(' ');
+
+        $rendered = $header->render();
+        $lines    = explode("\r\n", $rendered);
+
+        foreach ($lines as $line) {
+            $this->assertEquals(0, substr_count($line, '"') % 2);
+        }
+    }
+
+    public function testFoldedOutputUnfoldsBackToTheSameValue()
+    {
+        $headerValue = new Header\Value('form-data');
+        $headerValue->addParameter('name', 'image')
+            ->addParameter('filename', '/tmp/some image.jpg')
+            ->addParameter('foo', 'Some other param');
+        $header = new Header('Content-Disposition', $headerValue);
+        $header->setWrap(40)->setIndent("\t");
+
+        $rendered = $header->render();
+        $parsed   = Header::parse($rendered);
+
+        $this->assertEquals('form-data', $parsed->getValue(0)->getValue());
+        $this->assertEquals('image', $parsed->getValue(0)->getParameter('name'));
+        $this->assertEquals('/tmp/some image.jpg', $parsed->getValue(0)->getParameter('filename'));
+        $this->assertEquals('Some other param', $parsed->getValue(0)->getParameter('foo'));
+    }
+
+    public function testParseThenRenderRoundTripsPlainKeyValueHeader()
+    {
+        $original = 'Set-Cookie: sessionid=abc123';
+        $header   = Header::parse($original);
+        $this->assertEquals($original, $header->render());
+    }
+
+    public function testParseThenRenderPreservesParentheticalTextInUnstructuredValue()
+    {
+        $original = 'Subject: Order #123 (updated) today';
+        $header   = Header::parse($original);
+        $this->assertEquals($original, $header->render());
+    }
+
+    public function testParseThenRenderPreservesMixedDelimiterList()
+    {
+        $original = 'Accept-Encoding: gzip, deflate; q=0.5';
+        $header   = Header::parse($original);
+        $this->assertEquals($original, $header->render());
+    }
+
+    public function testParseThenRenderRoundTripsQuotedParameterWithDelimiter()
+    {
+        $original = 'Content-Disposition: attachment; filename="a;b.pdf"';
+        $header   = Header::parse($original);
+        $this->assertEquals($original, $header->render());
+    }
+
+    public function testFoldDoesNotSplitEncodedWordAndRoundTrips()
+    {
+        $original = 'Héllo Wörld ünd mehr text hier damit es lang genug wird zum falten';
+        $header   = new Header('Subject', $original);
+        $header->setWrap(76)->setIndent("\t");
+
+        $rendered = $header->render();
+        $parsed   = Header::parse($rendered);
+
+        $this->assertEquals($original, $parsed->getValue(0)->getDecodedValue());
+    }
+
+    public function testFromHeaderRenderPreservesAddressWhenDisplayNameIsNonAscii()
+    {
+        $header   = new Header('From', 'Björn Müller <bjorn@example.com>');
+        $rendered = $header->render();
+        $this->assertStringContainsString('<bjorn@example.com>', $rendered);
+        $this->assertStringContainsString('=?UTF-8?B?', $rendered);
+    }
+
+    public function testFoldNeverBreaksInsideAngleAddr()
+    {
+        $header = new Header(
+            'References',
+            '<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@mail.example.com> <bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb@mail.example.com>'
+        );
+        $header->setWrap(76)->setIndent("\t");
+
+        $rendered = $header->render();
+        $unfolded = Header\Lexer::unfold($rendered);
+
+        $this->assertStringNotContainsString('< ', $unfolded);
+        $this->assertStringNotContainsString(' >', $unfolded);
+        $this->assertStringContainsString('<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@mail.example.com>', $unfolded);
+        $this->assertStringContainsString('<bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb@mail.example.com>', $unfolded);
+    }
+
 }

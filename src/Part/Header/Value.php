@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Mime\Part\Header;
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    2.0.3
+ * @version    3.0.0
  */
 class Value
 {
@@ -91,55 +91,171 @@ class Value
     public static function parse(string $value): Value
     {
         $valueObject = new Value();
-        $parameters  = [];
+        $trimmed     = trim($value);
 
-        if ((str_contains($value, ';')) || (str_contains($value, ','))) {
-            $matches = [];
-            preg_match_all('/\w+=[\\a-zA-Z0-9_\s\.\"\/]/mi', $value, $matches, PREG_OFFSET_CAPTURE);
-            if (isset($matches[0]) && isset($matches[0][0]) && isset($matches[0][0][1])) {
-                $val = trim(substr($value, 0, $matches[0][0][1]));
-                if (str_ends_with($val, ';') || str_ends_with($val, ',')) {
-                    $val = substr($val, 0, -1);
-                }
-                if ((stripos($val, 'Basic') !== false) || (stripos($val, 'Bearer') !== false) || (stripos($val, 'Digest') !== false)) {
-                    if (str_contains($val, ' ')) {
-                        $valueObject->setScheme(substr($val, 0, strpos($val, ' ')) . ' ');
-                        $valueObject->setValue(substr($val, (strpos($val, ' ') + 1)));
-                    } else {
-                        $valueObject->setScheme($val . ' ');
-                    }
-                } else {
-                    $valueObject->setValue($val);
-                }
+        foreach (['Basic', 'Bearer', 'Digest'] as $schemeName) {
+            $schemeLength = strlen($schemeName);
+            if ((strncasecmp($trimmed, $schemeName, $schemeLength) === 0) &&
+                ((strlen($trimmed) === $schemeLength) || ($trimmed[$schemeLength] === ' '))) {
+                $valueObject->setScheme($schemeName . ' ');
+                $trimmed = ltrim(substr($trimmed, $schemeLength));
+                break;
+            }
+        }
 
-                $params       = trim(substr($value, $matches[0][0][1]));
-                $paramValues  = [];
-                $paramMatches = [];
-                preg_match_all('/\w+=/mi', $params, $paramMatches, PREG_OFFSET_CAPTURE);
-                foreach ($paramMatches[0] as $i => $paramMatch) {
-                    if (isset($paramMatches[0][$i + 1])) {
-                        $paramValues[] = trim(substr($params, $paramMatch[1], $paramMatches[0][$i + 1][1] - $paramMatch[1]));
-                    } else {
-                        $paramValues[] = trim(substr($params, $paramMatch[1]));
-                    }
-                }
-                foreach ($paramValues as $pValue) {
-                    [$paramName, $paramValue, $delimiter] = self::parseParameter($pValue);
-                    $parameters[$paramName]  = $paramValue;
-                    if ($delimiter !== null) {
-                        $valueObject->setDelimiter($delimiter);
-                    }
+        $source             = $trimmed;
+        $tokens             = (new Lexer($source))->tokenize();
+        $encodedWordRanges  = EncodedWord::findRanges($source);
+
+        $segments   = [[]];
+        $delimiters = [];
+
+        foreach ($tokens as $token) {
+            if (($token->type === Lexer::DELIMITER) && (($token->value === ';') || ($token->value === ','))) {
+                $delimiters[] = $token->value;
+                $segments[]   = [];
+            } else {
+                $segments[count($segments) - 1][] = $token;
+            }
+        }
+
+        $firstSegment    = self::trimFws($segments[0]);
+        $hasLeadingValue = true;
+        if (count($segments) > 1) {
+            foreach ($firstSegment as $token) {
+                if (($token->type === Lexer::DELIMITER) && ($token->value === '=') &&
+                    !self::isInsideEncodedWord($token, $encodedWordRanges)) {
+                    $hasLeadingValue = false;
+                    break;
                 }
             }
-        } else {
-            $valueObject->setValue($value);
+        }
+
+        $valueParts      = [];
+        $valuePartsDelim = [];
+        $parameters      = [];
+
+        foreach ($segments as $i => $segmentTokens) {
+            $segmentTokens = self::trimFws($segmentTokens);
+
+            if (($i === 0) && $hasLeadingValue) {
+                $spliced = self::spliceSegment($source, $segmentTokens);
+                if ($spliced !== '') {
+                    $valueParts[] = $spliced;
+                }
+                continue;
+            }
+
+            $eqIndex = null;
+            foreach ($segmentTokens as $j => $token) {
+                if (($token->type === Lexer::DELIMITER) && ($token->value === '=') &&
+                    !self::isInsideEncodedWord($token, $encodedWordRanges)) {
+                    $eqIndex = $j;
+                    break;
+                }
+            }
+
+            if ($eqIndex === null) {
+                $spliced = self::spliceSegment($source, $segmentTokens);
+                if ($spliced !== '') {
+                    if (!empty($valueParts)) {
+                        $valuePartsDelim[] = $delimiters[$i - 1];
+                    }
+                    $valueParts[] = $spliced;
+                }
+                continue;
+            }
+
+            $paramName  = self::renderSegment(array_slice($segmentTokens, 0, $eqIndex));
+            $paramValue = self::renderSegment(array_slice($segmentTokens, $eqIndex + 1));
+            if ($paramName !== '') {
+                $parameters[$paramName] = $paramValue;
+            }
+        }
+
+        if (!empty($valueParts)) {
+            $mainValue = array_shift($valueParts);
+            foreach ($valueParts as $k => $part) {
+                $mainValue .= $valuePartsDelim[$k] . ' ' . $part;
+            }
+            $valueObject->setValue($mainValue);
         }
 
         if (!empty($parameters)) {
             $valueObject->addParameters($parameters);
         }
+        if (!empty($delimiters)) {
+            $valueObject->setDelimiter($delimiters[count($delimiters) - 1]);
+        }
 
         return $valueObject;
+    }
+
+    /**
+     * Trim leading/trailing FWS tokens from a token list
+     *
+     * @param  Token[] $tokens
+     * @return Token[]
+     */
+    protected static function trimFws(array $tokens): array
+    {
+        while (!empty($tokens) && ($tokens[array_key_first($tokens)]->type === Lexer::FWS)) {
+            array_shift($tokens);
+        }
+        while (!empty($tokens) && ($tokens[array_key_last($tokens)]->type === Lexer::FWS)) {
+            array_pop($tokens);
+        }
+        return array_values($tokens);
+    }
+
+    /**
+     * Concatenate a token list's values back into a string
+     *
+     * @param  Token[] $tokens
+     * @return string
+     */
+    protected static function renderSegment(array $tokens): string
+    {
+        $value = '';
+        foreach (self::trimFws($tokens) as $token) {
+            $value .= $token->value;
+        }
+        return $value;
+    }
+
+    /**
+     * Splice a token span's exact original text out of the source string,
+     * by first/last token offset - preserves comments, escapes, and
+     * whitespace exactly as written, unlike reconstructing from token values.
+     *
+     * @param  string  $source
+     * @param  Token[] $tokens
+     * @return string
+     */
+    protected static function spliceSegment(string $source, array $tokens): string
+    {
+        $tokens = self::trimFws($tokens);
+        if (empty($tokens)) {
+            return '';
+        }
+        $first = $tokens[array_key_first($tokens)];
+        $last  = $tokens[array_key_last($tokens)];
+        return substr($source, $first->start, $last->end - $first->start);
+    }
+
+    /**
+     * @param  Token $token
+     * @param  array $ranges
+     * @return bool
+     */
+    protected static function isInsideEncodedWord(Token $token, array $ranges): bool
+    {
+        foreach ($ranges as $range) {
+            if (($token->start >= $range['start']) && ($token->start < $range['end'])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -193,7 +309,7 @@ class Value
      */
     public function hasScheme(): bool
     {
-        return ($this->delimiter !== null);
+        return ($this->scheme !== null);
     }
 
     /**
@@ -216,6 +332,16 @@ class Value
     public function getValue(): string|null
     {
         return $this->value;
+    }
+
+    /**
+     * Get the header value, decoded of any RFC 2047 encoded-words
+     *
+     * @return string|null
+     */
+    public function getDecodedValue(): string|null
+    {
+        return ($this->value !== null) ? EncodedWord::decode($this->value) : null;
     }
 
     /**
@@ -268,8 +394,9 @@ class Value
         $parameters = [];
 
         foreach ($this->parameters as $name => $value) {
-            if (!str_contains($value, '"') && (str_contains($value, ' ') || ($this->forceQuote))) {
-                $value = '"' . $value . '"';
+            $needsQuoting = $this->forceQuote || (bool)preg_match('/[\s;,="\\\\]/', $value);
+            if ($needsQuoting) {
+                $value = '"' . addcslashes($value, '"\\') . '"';
             }
             $parameters[] = $name . '=' . $value;
         }
@@ -369,9 +496,9 @@ class Value
      * @throws Exception
      * @return string
      */
-    public function render(): string
+    public function render(?string $headerName = null): string
     {
-        $value = $this->scheme . $this->value;
+        $value = $this->scheme . self::encodeValueForHeader((string)$this->value, $headerName);
 
         if (count($this->parameters) > 0) {
             $parameters = $this->getParametersAsString();
@@ -382,6 +509,33 @@ class Value
         }
 
         return $value;
+    }
+
+    /**
+     * Header names whose value is a structured address (mailbox-list or
+     * address-list per RFC 5322) - for these, the value is parsed via
+     * AddressList and each address's display name is RFC 2047-encoded
+     * independently, never the address itself. Groups and obs-* forms
+     * aren't parsed structurally - see AddressList::parse().
+     *
+     * @var array
+     */
+    protected const ADDRESS_HEADER_NAMES = [
+        'to', 'from', 'cc', 'bcc', 'reply-to', 'sender',
+        'resent-to', 'resent-from', 'resent-cc', 'resent-bcc', 'resent-sender',
+    ];
+
+    /**
+     * @param  string  $value
+     * @param  ?string $headerName
+     * @return string
+     */
+    protected static function encodeValueForHeader(string $value, ?string $headerName): string
+    {
+        if (($headerName !== null) && in_array(strtolower($headerName), self::ADDRESS_HEADER_NAMES, true)) {
+            return AddressList::parse($value)->render();
+        }
+        return EncodedWord::encode($value);
     }
 
     /**

@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Mime\Part;
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    2.0.3
+ * @version    3.0.0
  */
 class Header
 {
@@ -79,20 +79,35 @@ class Header
      */
     public static function parse(string $header): Header
     {
-        $name = trim(substr($header, 0, strpos($header, ':')));
+        $unfolded = Header\Lexer::unfold(trim($header, "\r\n"));
+        $lines    = explode("\r\n", $unfolded);
 
-        // Handle multiple values
-        if (substr_count($header, $name) > 1) {
-            $values = array_map('trim', array_filter(explode($name . ':', $header)));
-        // Else, handle single value
-        } else {
-            $values = [trim(substr($header, (strpos($header, ':') + 1)))];
+        $firstLine  = $lines[0];
+        $colonToken = Header\Lexer::findTopLevelDelimiter($firstLine, ':');
+
+        if ($colonToken === null) {
+            return new static(trim($firstLine));
         }
 
+        $name         = trim(substr($firstLine, 0, $colonToken->start));
         $headerObject = new static($name);
+        $headerObject->addValue(Header\Value::parse(substr($firstLine, $colonToken->end)));
 
-        foreach ($values as $value) {
-            $headerObject->addValue(Header\Value::parse($value));
+        for ($i = 1, $count = count($lines); $i < $count; $i++) {
+            $line = $lines[$i];
+            if ($line === '') {
+                continue;
+            }
+
+            $lineColonToken = Header\Lexer::findTopLevelDelimiter($line, ':');
+            if ($lineColonToken === null) {
+                continue;
+            }
+
+            $lineName = trim(substr($line, 0, $lineColonToken->start));
+            if ($lineName === $name) {
+                $headerObject->addValue(Header\Value::parse(substr($line, $lineColonToken->end)));
+            }
         }
 
         return $headerObject;
@@ -349,15 +364,83 @@ class Header
         $headers = [];
 
         foreach ($this->values as $value) {
-            $header = $this->name . ': ' . $value;
-
-            if ((int)$this->wrap != 0) {
-                $header = wordwrap($header, $this->wrap, "\r\n" . $this->indent);
+            $header = $this->name . ': ' . $value->render($this->name);
+            if ((int)$this->wrap !== 0) {
+                $header = $this->fold($header);
             }
             $headers[] = $header;
         }
 
         return implode("\r\n", $headers);
+    }
+
+    /**
+     * Fold a rendered header line at RFC 5322 structural boundaries - only
+     * ever after a DELIMITER token or at an FWS token, never inside an ATOM
+     * or a QUOTED_STRING.
+     *
+     * @param  string $header
+     * @return string
+     */
+    protected function fold(string $header): string
+    {
+        $tokens = (new Header\Lexer($header))->tokenize();
+        $ranges = Header\EncodedWord::findRanges($header);
+
+        foreach ($tokens as $i => $token) {
+            if (($token->type === Header\Lexer::DELIMITER) && ($token->value === '<')) {
+                for ($j = $i + 1, $count = count($tokens); $j < $count; $j++) {
+                    if (($tokens[$j]->type === Header\Lexer::DELIMITER) && ($tokens[$j]->value === '>')) {
+                        $ranges[] = ['start' => $token->start, 'end' => $tokens[$j]->end];
+                        break;
+                    }
+                }
+            }
+        }
+
+        $result    = '';
+        $current   = '';
+        $lastEnd   = 0;
+        $skipUntil = 0;
+
+        foreach ($tokens as $token) {
+            if ($token->start < $skipUntil) {
+                continue;
+            }
+
+            $range = null;
+            foreach ($ranges as $candidate) {
+                if ($candidate['start'] === $token->start) {
+                    $range = $candidate;
+                    break;
+                }
+            }
+
+            if ($range !== null) {
+                $piece     = substr($header, $lastEnd, $range['end'] - $lastEnd);
+                $lastEnd   = $range['end'];
+                $skipUntil = $range['end'];
+                $isFws     = false;
+            } else {
+                $piece   = substr($header, $lastEnd, $token->end - $lastEnd);
+                $lastEnd = $token->end;
+                $isFws   = ($token->type === Header\Lexer::FWS);
+            }
+
+            if (($current !== '') && ((strlen($current) + strlen($piece)) > $this->wrap)) {
+                $result  .= rtrim($current) . "\r\n" . $this->indent;
+                $current  = '';
+                if ($isFws) {
+                    continue;
+                }
+            }
+
+            $current .= $piece;
+        }
+
+        $current .= substr($header, $lastEnd);
+
+        return $result . $current;
     }
 
     /**

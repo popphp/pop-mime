@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -22,12 +22,25 @@ use Pop\Mime\Part\Body;
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    2.0.3
+ * @version    3.0.0
  */
 class Message extends Part
 {
+
+    /**
+     * Set the Message-ID header
+     *
+     * @param  ?string $id
+     * @param  ?string $domain
+     * @return Message
+     */
+    public function setMessageId(?string $id = null, ?string $domain = null): Message
+    {
+        $this->addHeader('Message-ID', $id ?? $this->generateId($domain));
+        return $this;
+    }
 
     /**
      * Parse message
@@ -162,13 +175,13 @@ class Message extends Part
                             $fieldPart = new Part(
                                 new Header('Content-Disposition', new Header\Value('form-data', null, ['name' => $name . '[]']))
                             );
-                            $fieldPart->setBody(new Body($val, Body::RAW_URL));
+                            $fieldPart->setBody(new Body($val, Body\Encoding::RAW_URL));
                             $message->addPart($fieldPart);
                         }
                     }
                 } else {
                     $fieldPart = new Part(new Header('Content-Disposition', new Header\Value('form-data', null, ['name' => $name])));
-                    $fieldPart->setBody(new Body($value, Body::RAW_URL));
+                    $fieldPart->setBody(new Body($value, Body\Encoding::RAW_URL));
                     $message->addPart($fieldPart);
                 }
             }
@@ -185,24 +198,33 @@ class Message extends Part
      */
     public static function parseHeaders(string $headerString): array
     {
-        $headers = [];
-        $matches = [];
-        preg_match_all('/[a-zA-Z-]+:/', $headerString, $matches, PREG_OFFSET_CAPTURE);
+        $headers  = [];
+        $unfolded = Header\Lexer::unfold($headerString);
+        $lines    = explode("\r\n", $unfolded);
 
-        if (isset($matches[0]) && (count($matches[0]) > 0)) {
-            $length = count($matches[0]);
-            for ($i = 0; $i < $length; $i++) {
-                if (isset($matches[0][$i + 1][1])) {
-                    $start  = $matches[0][$i][1] + strlen($matches[0][$i][0]);
-                    $offset = $matches[0][$i + 1][1];
-                    $value  = substr($headerString, 0, $offset);
-                    $value  = trim(substr($value, $start));
-                } else {
-                    $start  = strpos($headerString, $matches[0][$i][0]) + strlen($matches[0][$i][0]);
-                    $value  = substr($headerString, $start);
-                }
-                $headers[] = Header::parse($matches[0][$i][0] . ' ' . trim($value));
+        $currentName  = null;
+        $currentLines = [];
+
+        foreach ($lines as $line) {
+            if ($line === '') {
+                continue;
             }
+
+            $colonToken = Header\Lexer::findTopLevelDelimiter($line, ':');
+
+            if ($colonToken !== null) {
+                if ($currentName !== null) {
+                    $headers[] = Header::parse(implode("\r\n", $currentLines));
+                }
+                $currentName  = trim(substr($line, 0, $colonToken->start));
+                $currentLines = [$line];
+            } else if ($currentName !== null) {
+                $currentLines[] = $line;
+            }
+        }
+
+        if ($currentName !== null) {
+            $headers[] = Header::parse(implode("\r\n", $currentLines));
         }
 
         return $headers;
@@ -281,14 +303,9 @@ class Message extends Part
                 $isForm   = (($part->hasHeader('Content-Disposition')) &&
                     ($part->getHeader('Content-Disposition')->hasValue('form-data')));
                 if ($part->hasHeader('Content-Transfer-Encoding') && (count($part->getHeader('Content-Transfer-Encoding')->getValues()) == 1)) {
-                    $encodingHeader = strtolower($part->getHeader('Content-Transfer-Encoding')->getValue(0));
-                    if ($encodingHeader == 'base64') {
-                        $encoding = Body::BASE64;
-                    } else if ($encodingHeader == 'quoted-printable') {
-                        $encoding = Body::QUOTED;
-                    }
+                    $encoding = Body\Encoding::fromHeaderValue($part->getHeader('Content-Transfer-Encoding')->getValue(0));
                 } else if ($isForm) {
-                    $encoding = Body::RAW_URL;
+                    $encoding = Body\Encoding::RAW_URL;
                 }
                 $body = new Body($bodyString, $encoding);
                 if ($encoding !== null) {

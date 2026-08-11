@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -14,6 +14,7 @@
 namespace Pop\Mime;
 
 use Pop\Mime\Part\Exception;
+use Pop\Utils\File;
 
 /**
  * MIME message part class
@@ -21,9 +22,9 @@ use Pop\Mime\Part\Exception;
  * @category   Pop
  * @package    Pop\Mime
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    2.0.3
+ * @version    3.0.0
  */
 class Part
 {
@@ -207,15 +208,15 @@ class Part
     /**
      * Add file as body
      *
-     * @param string   $file
-     * @param string   $disposition
-     * @param string   $encoding
-     * @param int|bool $split
+     * @param string             $file
+     * @param string             $disposition
+     * @param Part\Body\Encoding $encoding
+     * @param int|bool           $split
      * @throws Exception
      * @return Part
      */
     public function addFile(
-        string $file, string $disposition = 'attachment', string $encoding = Part\Body::BASE64, int|bool $split = true
+        string $file, string $disposition = 'attachment', Part\Body\Encoding $encoding = Part\Body\Encoding::BASE64, int|bool $split = true
     ): Part
     {
         if ($disposition !== null) {
@@ -226,6 +227,99 @@ class Part
         $this->body = new Part\Body();
         $this->body->setContentFromFile($file, $encoding, $split);
         return $this;
+    }
+
+    /**
+     * Detect a content type from a filename's extension
+     *
+     * @param  string $filename
+     * @return string
+     */
+    protected static function detectContentType(string $filename): string
+    {
+        if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'md') {
+            return 'text/plain';
+        }
+        return File::getFileMimeType($filename) ?? 'application/octet-stream';
+    }
+
+    /**
+     * Create a text/plain part
+     *
+     * @param  string $content
+     * @return static
+     */
+    public static function text(string $content): static
+    {
+        $part = new static();
+        $part->addHeader('Content-Type', 'text/plain');
+        $part->setBody($content);
+        return $part;
+    }
+
+    /**
+     * Create a text/html part
+     *
+     * @param  string $content
+     * @return static
+     */
+    public static function html(string $content): static
+    {
+        $part = new static();
+        $part->addHeader('Content-Type', 'text/html');
+        $part->setBody($content);
+        return $part;
+    }
+
+    /**
+     * Create an attachment part from a file on disk
+     *
+     * @param  string             $file
+     * @param  ?string            $contentType
+     * @param  string             $disposition
+     * @param  Part\Body\Encoding $encoding
+     * @param  int|bool           $split
+     * @return static
+     */
+    public static function attachment(
+        string $file, ?string $contentType = null, string $disposition = 'attachment',
+        Part\Body\Encoding $encoding = Part\Body\Encoding::BASE64, int|bool $split = true
+    ): static
+    {
+        $part = new static();
+        $part->addHeader('Content-Type', $contentType ?? static::detectContentType($file));
+        $part->addFile($file, $disposition, $encoding, $split);
+        return $part;
+    }
+
+    /**
+     * Create an attachment part from in-memory content
+     *
+     * @param  string             $content
+     * @param  string             $filename
+     * @param  ?string            $contentType
+     * @param  string             $disposition
+     * @param  Part\Body\Encoding $encoding
+     * @param  int|bool           $split
+     * @return static
+     */
+    public static function attachmentFromContent(
+        string $content, string $filename, ?string $contentType = null, string $disposition = 'attachment',
+        Part\Body\Encoding $encoding = Part\Body\Encoding::BASE64, int|bool $split = true
+    ): static
+    {
+        $part = new static();
+        $part->addHeader('Content-Type', $contentType ?? static::detectContentType($filename));
+
+        $header = new Part\Header('Content-Disposition');
+        $header->addValue($disposition, null, ['filename' => basename($filename)]);
+        $part->addHeader($header);
+
+        $body = new Part\Body($content, $encoding, $split);
+        $body->setAsFile(true);
+        $part->setBody($body);
+
+        return $part;
     }
 
     /**
@@ -323,9 +417,9 @@ class Part
     /**
      * Get subtype
      *
-     * @return string
+     * @return string|null
      */
-    public function getSubType(): string
+    public function getSubType(): ?string
     {
         return $this->subType;
     }
@@ -338,6 +432,39 @@ class Part
     public function hasSubType(): bool
     {
         return ($this->subType !== null);
+    }
+
+    /**
+     * Infer and set the subtype (alternative/mixed) from the current nested parts
+     *
+     * @return Part
+     */
+    public function inferSubType(): Part
+    {
+        $hasText = false;
+        $hasHtml = false;
+        $hasFile = false;
+
+        foreach ($this->parts as $part) {
+            if ($part->hasBody() && $part->getBody()->isFile()) {
+                $hasFile = true;
+                continue;
+            }
+            $contentType = $part->hasHeader('Content-Type') ? $part->getContentType() : null;
+            if (($contentType !== null) && str_starts_with($contentType, 'text/plain')) {
+                $hasText = true;
+            } else if (($contentType !== null) && str_starts_with($contentType, 'text/html')) {
+                $hasHtml = true;
+            }
+        }
+
+        if ($hasFile) {
+            $this->setSubType('mixed');
+        } else if ($hasText && $hasHtml) {
+            $this->setSubType('alternative');
+        }
+
+        return $this;
     }
 
     /**
@@ -381,6 +508,32 @@ class Part
     {
         $this->setBoundary(sha1(uniqid()));
         return $this->boundary;
+    }
+
+    /**
+     * Generate a message/content ID
+     *
+     * @param  ?string $domain
+     * @return string
+     */
+    public function generateId(?string $domain = null): string
+    {
+        $left   = md5(getmypid() . '.' . time() . '.' . uniqid((string)mt_rand(), true));
+        $domain = $domain ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+        return '<' . $left . '@' . $domain . '>';
+    }
+
+    /**
+     * Set the Content-ID header
+     *
+     * @param  ?string $id
+     * @param  ?string $domain
+     * @return Part
+     */
+    public function setContentId(?string $id = null, ?string $domain = null): Part
+    {
+        $this->addHeader('Content-ID', $id ?? $this->generateId($domain));
+        return $this;
     }
 
     /**
@@ -442,9 +595,9 @@ class Part
     /**
      * Get content-type
      *
-     * @return string
+     * @return string|null
      */
-    public function getContentType(): string
+    public function getContentType(): ?string
     {
         $contentType = null;
 
@@ -501,13 +654,8 @@ class Part
         }
 
         // Decode filename, if encoded
-        if (($filename !== null) && (function_exists('imap_mime_header_decode')) &&
-            ((str_contains($filename, 'UTF')) || (str_contains($filename, 'ISO')) ||
-                (str_contains($filename, '?')) || (str_contains($filename, '=')))) {
-            $filenameAry = imap_mime_header_decode($filename);
-            if (isset($filenameAry[0]) && isset($filenameAry[0]->text)) {
-                $filename = $filenameAry[0]->text;
-            }
+        if ($filename !== null) {
+            $filename = Part\Header\EncodedWord::decode($filename);
         }
 
         return $filename;
@@ -525,13 +673,14 @@ class Part
         if ($this->body->isEncoded()) {
             if ($this->body->isBase64Encoding()) {
                 $content = base64_decode($content);
-            } else if ($this->body->isQuotedEncoding()) {
+            } else if ($this->body->isQuotedPrintableEncoding()) {
                 $content = quoted_printable_decode($content);
             } else if ($this->body->isUrlEncoding()) {
                 $content = urldecode($content);
             } else if ($this->body->isRawUrlEncoding()) {
                 $content = rawurldecode($content);
             }
+            // Binary/7bit/8bit are identity encodings - content is already correct as-is.
         }
 
         return $content;
@@ -603,12 +752,7 @@ class Part
             $messagePart .= $this->renderParts($preamble);
         } else if ($this->hasBody()) {
             if ((!$this->hasHeader('Content-Transfer-Encoding')) && ($this->body->hasEncoding())) {
-                $encoding = null;
-                if ($this->body->isBase64Encoding()) {
-                    $encoding = 'base64';
-                } else if ($this->body->isQuotedEncoding()) {
-                    $encoding = 'quoted-printable';
-                }
+                $encoding = $this->body->getEncoding()?->toHeaderValue();
                 if ($encoding !== null) {
                     $this->addHeader(new Part\Header('Content-Transfer-Encoding', $encoding));
                 }

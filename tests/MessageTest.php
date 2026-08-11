@@ -6,6 +6,7 @@ use Pop\Mime\Message;
 use Pop\Mime\Part;
 use Pop\Mime\Part\Header;
 use Pop\Mime\Part\Body;
+use Pop\Mime\Part\Body\Encoding;
 use PHPUnit\Framework\TestCase;
 
 class MessageTest extends TestCase
@@ -226,7 +227,7 @@ class MessageTest extends TestCase
         $body = new Body(
             "Hello World! What's up?! Hello World! What's up?! Hello World! What's up?! Hello World! What's up?! Hello World! What's up?!"
         );
-        $body->setEncoding(Body::QUOTED);
+        $body->setEncoding(Encoding::QUOTED_PRINTABLE);
 
         $part = new Part();
         $part->setBody($body);
@@ -315,6 +316,73 @@ class MessageTest extends TestCase
         $this->assertEquals(5, count($message->getHeaders()));
         $this->assertEquals(1, count($message->getParts()));
         $this->assertEquals(3, count($message->getParts()[0]->getParts()));
+    }
+
+    public function testParseHeadersNotFooledByColonLikeTextInValue()
+    {
+        $headers = Message::parseHeaders("X-Note: See Section: Introduction for details\r\nSubject: Hello");
+
+        $this->assertEquals(2, count($headers));
+        $this->assertEquals('X-Note', $headers[0]->getName());
+        $this->assertEquals('See Section: Introduction for details', $headers[0]->getValueAsString());
+        $this->assertEquals('Subject', $headers[1]->getName());
+        $this->assertEquals('Hello', $headers[1]->getValueAsString());
+    }
+
+    public function testParseHeadersUnfoldsContinuationLines()
+    {
+        $headers = Message::parseHeaders("Content-Type: multipart/mixed;\r\n\tboundary=abc123\r\nMIME-Version: 1.0");
+
+        $this->assertEquals(2, count($headers));
+        $this->assertEquals('abc123', $headers[0]->getValue(0)->getParameter('boundary'));
+    }
+
+    public function testParsePartWithBinaryEncoding()
+    {
+        $part = new Part();
+        $part->addHeader('Content-Type', 'application/octet-stream');
+        $part->setBody(new Body('Hello World!', Encoding::BINARY));
+
+        $parsedPart = Message::parsePart($part->render());
+        $this->assertEquals(Encoding::BINARY, $parsedPart->getBody()->getEncoding());
+        $this->assertEquals('Hello World!', $parsedPart->getContents());
+    }
+
+    public function testParsePartWith7BitEncoding()
+    {
+        $part = new Part();
+        $part->addHeader('Content-Type', 'text/plain');
+        $part->setBody(new Body('Hello World!', Encoding::_7BIT));
+
+        $parsedPart = Message::parsePart($part->render());
+        $this->assertEquals(Encoding::_7BIT, $parsedPart->getBody()->getEncoding());
+    }
+
+    public function testParsePartWith8BitEncoding()
+    {
+        $part = new Part();
+        $part->addHeader('Content-Type', 'text/plain');
+        $part->setBody(new Body('Hello World!', Encoding::_8BIT));
+
+        $parsedPart = Message::parsePart($part->render());
+        $this->assertEquals(Encoding::_8BIT, $parsedPart->getBody()->getEncoding());
+    }
+
+    public function testSetMessageIdWithExplicitId()
+    {
+        $message = new Message();
+        $message->setMessageId('<abc123@example.com>');
+        $this->assertTrue($message->hasHeader('Message-ID'));
+        $this->assertFalse($message->hasHeader('Content-ID'));
+        $this->assertEquals('<abc123@example.com>', (string)$message->getHeader('Message-ID')->getValue(0));
+    }
+
+    public function testSetMessageIdGeneratesWhenOmitted()
+    {
+        $message = new Message();
+        $message->setMessageId(null, 'example.com');
+        $this->assertTrue($message->hasHeader('Message-ID'));
+        $this->assertMatchesRegularExpression('/^<[a-f0-9]{32}@example\.com>$/', (string)$message->getHeader('Message-ID')->getValue(0));
     }
 
 }

@@ -14,7 +14,7 @@
 namespace Pop\Mime\Part\Header;
 
 /**
- * MIME part header value exception class
+ * RFC 5322 header lexer token
  *
  * @category   Pop
  * @package    Pop\Mime
@@ -23,7 +23,14 @@ namespace Pop\Mime\Part\Header;
  * @license    https://www.popphp.org/license     New BSD License
  * @version    3.0.0
  */
-class Exception extends \Exception
+final class Token
 {
+
+    public function __construct(
+        public readonly string $type,
+        public readonly string $value,
+        public readonly int $start,
+        public readonly int $end
+    ) {}
 
 }
