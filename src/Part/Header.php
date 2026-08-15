@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -196,18 +197,18 @@ class Header
      */
     public function getValueAsString(int $i = 0): string|null
     {
-        return (string)$this->values[$i] ?? null;
+        return isset($this->values[$i]) ? (string)$this->values[$i] : null;
     }
 
     /**
      * Get index of header value
      *
      * @param  string $value
-     * @return bool
+     * @return int|bool
      */
-    public function getValueIndex(string $value): bool
+    public function getValueIndex(string $value): int|bool
     {
-        $result = null;
+        $result = false;
 
         foreach ($this->values as $i => $val) {
             if ($val->getValue() == $value) {
@@ -299,7 +300,7 @@ class Header
      */
     public function hasWrap(): bool
     {
-        return ($this->wrap !== null);
+        return ($this->wrap !== 0);
     }
 
     /**
@@ -331,7 +332,7 @@ class Header
      */
     public function hasIndent(): bool
     {
-        return ($this->indent !== null);
+        return ($this->indent !== '');
     }
 
     /**

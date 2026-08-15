@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -241,7 +242,7 @@ class Message extends Part
     {
         if (str_contains($bodyString, '--' . $boundary)) {
             $parts = explode('--' . $boundary, $bodyString);
-            if ((strpos($bodyString, '--' . $boundary) > 0) && isset($parts[0])) {
+            if (strpos($bodyString, '--' . $boundary) > 0) {
                 unset($parts[0]);
             }
         } else {
@@ -303,7 +304,7 @@ class Message extends Part
                 $isForm   = (($part->hasHeader('Content-Disposition')) &&
                     ($part->getHeader('Content-Disposition')->hasValue('form-data')));
                 if ($part->hasHeader('Content-Transfer-Encoding') && (count($part->getHeader('Content-Transfer-Encoding')->getValues()) == 1)) {
-                    $encoding = Body\Encoding::fromHeaderValue($part->getHeader('Content-Transfer-Encoding')->getValue(0));
+                    $encoding = Body\Encoding::fromHeaderValue((string)$part->getHeader('Content-Transfer-Encoding')->getValue(0));
                 } else if ($isForm) {
                     $encoding = Body\Encoding::RAW_URL;
                 }

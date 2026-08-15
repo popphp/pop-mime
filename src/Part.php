@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -219,11 +220,10 @@ class Part
         string $file, string $disposition = 'attachment', Part\Body\Encoding $encoding = Part\Body\Encoding::BASE64, int|bool $split = true
     ): Part
     {
-        if ($disposition !== null) {
-            $header = new Part\Header('Content-Disposition');
-            $header->addValue($disposition, null, ['filename' => basename($file)]);
-            $this->addHeader($header);
-        }
+        $header = new Part\Header('Content-Disposition');
+        $header->addValue($disposition, null, ['filename' => basename($file)]);
+        $this->addHeader($header);
+
         $this->body = new Part\Body();
         $this->body->setContentFromFile($file, $encoding, $split);
         return $this;
