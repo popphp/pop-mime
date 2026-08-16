@@ -41,6 +41,10 @@ final class EncodedWord
      */
     public static function decode(string $text): string
     {
+        if (!str_contains($text, '=?')) {
+            return $text;
+        }
+
         $pattern = '/=\?[^?\s]+\?[BbQq]\?[^?]*\?=(?:\s+=\?[^?\s]+\?[BbQq]\?[^?]*\?=)*/';
 
         $result = preg_replace_callback($pattern, function ($matches) {

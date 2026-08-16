@@ -51,8 +51,9 @@ class Message extends Part
      */
     public static function parseMessage(string $messageString): Message
     {
-        $headerString = substr($messageString, 0, strpos($messageString, "\r\n\r\n"));
-        $bodyString   = substr($messageString, (strpos($messageString, "\r\n\r\n") + 4));
+        $splitPos     = strpos($messageString, "\r\n\r\n");
+        $headerString = substr($messageString, 0, $splitPos);
+        $bodyString   = substr($messageString, $splitPos + 4);
 
         $headers  = self::parseHeaders($headerString);
         $boundary = null;
@@ -240,9 +241,12 @@ class Message extends Part
      */
     public static function parseBody(string $bodyString, ?string $boundary = null): array
     {
-        if (str_contains($bodyString, '--' . $boundary)) {
-            $parts = explode('--' . $boundary, $bodyString);
-            if (strpos($bodyString, '--' . $boundary) > 0) {
+        $needle   = '--' . $boundary;
+        $splitPos = strpos($bodyString, $needle);
+
+        if ($splitPos !== false) {
+            $parts = explode($needle, $bodyString);
+            if ($splitPos > 0) {
                 unset($parts[0]);
             }
         } else {
@@ -264,9 +268,11 @@ class Message extends Part
     {
         $headers = [];
 
-        if (str_contains($partString, "\r\n\r\n")) {
-            $headerString = substr($partString, 0, strpos($partString, "\r\n\r\n"));
-            $bodyString   = trim(substr($partString, (strpos($partString, "\r\n\r\n") + 4)));
+        $splitPos = strpos($partString, "\r\n\r\n");
+
+        if ($splitPos !== false) {
+            $headerString = substr($partString, 0, $splitPos);
+            $bodyString   = trim(substr($partString, $splitPos + 4));
             $headers      = self::parseHeaders($headerString);
         } else {
             $bodyString   = trim($partString);

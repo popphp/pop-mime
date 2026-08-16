@@ -40,8 +40,8 @@ final class Lexer
     const DELIMITER     = 'DELIMITER';
     const FWS           = 'FWS';
 
-    protected const DELIMITERS = [';', ',', '=', ':', '<', '>'];
-    protected const WHITESPACE = [' ', "\t", "\r", "\n"];
+    protected const DELIMITERS = [';' => true, ',' => true, '=' => true, ':' => true, '<' => true, '>' => true];
+    protected const WHITESPACE = [' ' => true, "\t" => true, "\r" => true, "\n" => true];
 
     protected string $input;
     protected int    $length;
@@ -67,10 +67,10 @@ final class Lexer
                 $tokens[] = $this->readQuotedString();
             } else if ($char === '(') {
                 $this->skipComment();
-            } else if (in_array($char, self::DELIMITERS, true)) {
+            } else if (isset(self::DELIMITERS[$char])) {
                 $tokens[] = new Token(self::DELIMITER, $char, $this->pos, $this->pos + 1);
                 $this->pos++;
-            } else if (in_array($char, self::WHITESPACE, true)) {
+            } else if (isset(self::WHITESPACE[$char])) {
                 $tokens[] = $this->readWhitespace();
             } else {
                 $tokens[] = $this->readAtom();
@@ -127,7 +127,7 @@ final class Lexer
     protected function readWhitespace(): Token
     {
         $start = $this->pos;
-        while (($this->pos < $this->length) && in_array($this->input[$this->pos], self::WHITESPACE, true)) {
+        while (($this->pos < $this->length) && isset(self::WHITESPACE[$this->input[$this->pos]])) {
             $this->pos++;
         }
         return new Token(self::FWS, ' ', $start, $this->pos);
@@ -138,8 +138,8 @@ final class Lexer
         $start = $this->pos;
         while (
             ($this->pos < $this->length) &&
-            !in_array($this->input[$this->pos], self::DELIMITERS, true) &&
-            !in_array($this->input[$this->pos], self::WHITESPACE, true) &&
+            !isset(self::DELIMITERS[$this->input[$this->pos]]) &&
+            !isset(self::WHITESPACE[$this->input[$this->pos]]) &&
             ($this->input[$this->pos] !== '"') &&
             ($this->input[$this->pos] !== '(')
         ) {

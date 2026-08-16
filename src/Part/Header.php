@@ -342,17 +342,17 @@ class Header
      */
     public function isAttachment(): bool
     {
-        $result = false;
+        if ($this->name != 'Content-Disposition') {
+            return false;
+        }
 
         foreach ($this->values as $value) {
-            if (($this->name == 'Content-Disposition') &&
-                ((stripos((string)$value, 'attachment') !== false) || (stripos((string)$value, 'inline') !== false))) {
-                $result = true;
-                break;
+            if ((stripos((string)$value, 'attachment') !== false) || (stripos((string)$value, 'inline') !== false)) {
+                return true;
             }
         }
 
-        return $result;
+        return false;
     }
 
     /**
