@@ -22,6 +22,18 @@ class PartTest extends TestCase
         $this->assertInstanceOf('Pop\Mime\Part\Body', $part->getBody());
     }
 
+    public function testNoBody()
+    {
+        $part = new Part(new Header('Content-Disposition', 'form-data'));
+        $this->assertFalse($part->hasBody());
+        $this->assertNull($part->getBody());
+        $this->assertNull($part->getFilename());
+
+        $container = new Part();
+        $container->addPart($part);
+        $this->assertEquals(0, count($container->getAttachments()));
+    }
+
     public function testConstructorWithArrays()
     {
         $header  = new Header('Content-Type', 'text/plain');

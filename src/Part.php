@@ -325,9 +325,9 @@ class Part
     /**
      * Get body
      *
-     * @return Part\Body
+     * @return Part\Body|null
      */
-    public function getBody(): Part\Body
+    public function getBody(): Part\Body|null
     {
         return $this->body;
     }
@@ -584,7 +584,7 @@ class Part
         $attachments = [];
 
         foreach ($this->parts as $part) {
-            if ($part->getBody()->isFile()) {
+            if ($part->hasBody() && $part->getBody()->isFile()) {
                 $attachments[] = $part;
             }
         }
@@ -617,7 +617,7 @@ class Part
     {
         $filename = null;
 
-        if ($this->getBody()->isFile()) {
+        if ($this->hasBody() && $this->getBody()->isFile()) {
             // Check Content-Disposition header (standard)
             if ($this->hasHeader('Content-Disposition') && (count($this->getHeader('Content-Disposition')->getValues()) == 1)) {
                 $header = $this->getHeader('Content-Disposition');
