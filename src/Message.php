@@ -51,9 +51,17 @@ class Message extends Part
      */
     public static function parseMessage(string $messageString): Message
     {
-        $splitPos     = strpos($messageString, "\r\n\r\n");
-        $headerString = substr($messageString, 0, $splitPos);
-        $bodyString   = substr($messageString, $splitPos + 4);
+        $splitPos = strpos($messageString, "\r\n\r\n");
+
+        // Without a header/body delimiter, there are no headers to parse
+        // and the entire string is taken as the body
+        if ($splitPos !== false) {
+            $headerString = substr($messageString, 0, $splitPos);
+            $bodyString   = substr($messageString, $splitPos + 4);
+        } else {
+            $headerString = '';
+            $bodyString   = $messageString;
+        }
 
         $headers  = self::parseHeaders($headerString);
         $boundary = null;

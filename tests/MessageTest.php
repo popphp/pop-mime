@@ -63,6 +63,24 @@ class MessageTest extends TestCase
         $this->assertEquals(6, count($parsedMessage->getHeaders()));
     }
 
+    public function testParseMessageWithNoDelimiter()
+    {
+        $parsedMessage = Message::parseMessage('some content with no delimiter');
+
+        $this->assertFalse($parsedMessage->hasHeaders());
+        $this->assertTrue($parsedMessage->hasParts());
+        $this->assertEquals(1, count($parsedMessage->getParts()));
+        $this->assertEquals('some content with no delimiter', $parsedMessage->getParts()[0]->getContents());
+    }
+
+    public function testParseMessageWithEmptyString()
+    {
+        $parsedMessage = Message::parseMessage('');
+
+        $this->assertFalse($parsedMessage->hasHeaders());
+        $this->assertFalse($parsedMessage->hasParts());
+    }
+
     public function testParseForm()
     {
         $formData = Message::parseForm(file_get_contents(__DIR__ . '/tmp/form-file.txt'));
