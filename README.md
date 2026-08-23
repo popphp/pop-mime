@@ -2,7 +2,7 @@ pop-mime
 ========
 
 [![Build Status](https://github.com/popphp/pop-mime/workflows/phpunit/badge.svg)](https://github.com/popphp/pop-mime/actions)
-[![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-mime)](http://cc.popphp.org/pop-mime/)
+[![Coverage Status](https://cc.popphp.org/coverage.php?comp=pop-mime)](https://cc.popphp.org/pop-mime/)
 
 [![Join the chat at https://discord.gg/TZjgT74U7E](https://media.popphp.org/img/discord.svg)](https://discord.gg/TZjgT74U7E)
 
