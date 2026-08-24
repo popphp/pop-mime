@@ -65,7 +65,6 @@ class Message extends Part
 
         $headers  = self::parseHeaders($headerString);
         $boundary = null;
-        $parts    = [];
 
         foreach ($headers as $header) {
             foreach ($header->getValues() as $headerValue) {
@@ -76,19 +75,26 @@ class Message extends Part
             }
         }
 
-        $partStrings = self::parseBody($bodyString, $boundary);
-
-        foreach ($partStrings as $partString) {
-            $parts[] = self::parsePart($partString);
-        }
-
         $message = new self();
 
         if (!empty($headers)) {
             $message->addHeaders($headers);
         }
-        if (!empty($parts)) {
-            $message->addParts($parts);
+
+        // With a boundary, the body is a multipart container of nested parts.
+        // Without one, this is a single, non-multipart message and the body
+        // belongs directly on the message itself - mirrors parsePart()'s
+        // leaf/container branch below.
+        if ($boundary !== null) {
+            $parts = [];
+            foreach (self::parseBody($bodyString, $boundary) as $partString) {
+                $parts[] = self::parsePart($partString);
+            }
+            if (!empty($parts)) {
+                $message->addParts($parts);
+            }
+        } else if (trim($bodyString) !== '') {
+            self::buildLeafBody($message, trim($bodyString));
         }
 
         return $message;
@@ -312,28 +318,42 @@ class Message extends Part
                 }
                 return $subParts;
             } else {
-                $encoding = null;
-                $isFile   = (($part->hasHeader('Content-Disposition')) &&
-                    ($part->getHeader('Content-Disposition')->isAttachment()));
-                $isForm   = (($part->hasHeader('Content-Disposition')) &&
-                    ($part->getHeader('Content-Disposition')->hasValue('form-data')));
-                if ($part->hasHeader('Content-Transfer-Encoding') && (count($part->getHeader('Content-Transfer-Encoding')->getValues()) == 1)) {
-                    $encoding = Body\Encoding::fromHeaderValue((string)$part->getHeader('Content-Transfer-Encoding')->getValue(0));
-                } else if ($isForm) {
-                    $encoding = Body\Encoding::RAW_URL;
-                }
-                $body = new Body($bodyString, $encoding);
-                if ($encoding !== null) {
-                    $body->setAsEncoded(true);
-                }
-                if ($isFile) {
-                    $body->setAsFile(true);
-                }
-                $part->setBody($body);
+                self::buildLeafBody($part, $bodyString);
             }
         }
 
         return $part;
+    }
+
+    /**
+     * Build and set a leaf part's body from decoded content, inferring the
+     * encoding from Content-Transfer-Encoding / form-data Content-Disposition
+     * headers already set on the part
+     *
+     * @param  Part   $part
+     * @param  string $bodyString
+     * @return void
+     */
+    protected static function buildLeafBody(Part $part, string $bodyString): void
+    {
+        $encoding = null;
+        $isFile   = (($part->hasHeader('Content-Disposition')) &&
+            ($part->getHeader('Content-Disposition')->isAttachment()));
+        $isForm   = (($part->hasHeader('Content-Disposition')) &&
+            ($part->getHeader('Content-Disposition')->hasValue('form-data')));
+        if ($part->hasHeader('Content-Transfer-Encoding') && (count($part->getHeader('Content-Transfer-Encoding')->getValues()) == 1)) {
+            $encoding = Body\Encoding::fromHeaderValue((string)$part->getHeader('Content-Transfer-Encoding')->getValue(0));
+        } else if ($isForm) {
+            $encoding = Body\Encoding::RAW_URL;
+        }
+        $body = new Body($bodyString, $encoding);
+        if ($encoding !== null) {
+            $body->setAsEncoded(true);
+        }
+        if ($isFile) {
+            $body->setAsFile(true);
+        }
+        $part->setBody($body);
     }
 
 }

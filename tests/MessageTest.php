@@ -68,9 +68,22 @@ class MessageTest extends TestCase
         $parsedMessage = Message::parseMessage('some content with no delimiter');
 
         $this->assertFalse($parsedMessage->hasHeaders());
-        $this->assertTrue($parsedMessage->hasParts());
-        $this->assertEquals(1, count($parsedMessage->getParts()));
-        $this->assertEquals('some content with no delimiter', $parsedMessage->getParts()[0]->getContents());
+        $this->assertFalse($parsedMessage->hasParts());
+        $this->assertTrue($parsedMessage->hasBody());
+        $this->assertEquals('some content with no delimiter', $parsedMessage->getContents());
+    }
+
+    public function testParseNonMultipartMessage()
+    {
+        $raw = "From: a@test.com\r\nTo: b@test.com\r\nSubject: Test\r\nContent-Type: text/plain\r\n\r\nHello, this is the body.";
+
+        $parsedMessage = Message::parseMessage($raw);
+
+        $this->assertTrue($parsedMessage->hasHeaders());
+        $this->assertFalse($parsedMessage->hasParts());
+        $this->assertTrue($parsedMessage->hasBody());
+        $this->assertInstanceOf('Pop\Mime\Part\Body', $parsedMessage->getBody());
+        $this->assertEquals('Hello, this is the body.', $parsedMessage->getContents());
     }
 
     public function testParseMessageWithEmptyString()
