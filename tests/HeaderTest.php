@@ -215,4 +215,20 @@ class HeaderTest extends TestCase
         $this->assertStringContainsString('<bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb@mail.example.com>', $unfolded);
     }
 
+    public function testCloneCopiesValues()
+    {
+        $header = new Header('X-Key');
+        $header->addValue('original');
+        $header->getValue(0)->addParameter('a', '1');
+
+        $clone = clone $header;
+        $clone->getValue(0)->setValue('changed');
+        $clone->getValue(0)->addParameter('b', '2');
+
+        $this->assertNotSame($header->getValue(0), $clone->getValue(0));
+        $this->assertEquals('original', $header->getValue(0)->getValue());
+        $this->assertFalse($header->getValue(0)->hasParameter('b'));
+        $this->assertEquals('changed', $clone->getValue(0)->getValue());
+    }
+
 }

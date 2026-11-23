@@ -454,4 +454,16 @@ class Header
         return $this->render();
     }
 
+    /**
+     * Clone the header's values so a cloned header doesn't share them with the original
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        foreach ($this->values as $i => $value) {
+            $this->values[$i] = clone $value;
+        }
+    }
+
 }
